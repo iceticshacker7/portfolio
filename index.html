@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href=".\src\assets\myimage.jpeg" />
+    <!-- <link href="D:\Portfolio\client\src\fonts\mono.woff2" rel="stylesheet"> -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Divyansh</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx">
+            function sendHeight() {
+        const height = document.documentElement.scrollHeight;
+        window.parent.postMessage({ type: 'setHeight', height: height }, '*');
+      }
+
+      window.addEventListener('load', sendHeight);
+      window.addEventListener('resize', sendHeight);
+
+      const resizeObserver = new ResizeObserver(sendHeight);
+      resizeObserver.observe(document.body);
+
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'getHeight') {
+          sendHeight();
+        }
+      });
+    </script>
+  </body>
+</html>
