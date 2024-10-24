@@ -13,6 +13,7 @@ import ProjectManagementPage from "./services/ProjectManagementPage";
 import CertificateManagementPage from "./services/CertificateManagementPage";
 import DirectoryManagementPage from "./services/DirectoryManagementPage";
 import LearningContentPage from "./component/LearningContentPage";
+import BlogsPage from "./pages/blog-page";
 export default function App() {
   return (
     <Router>
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/certificates" element={<CertificatesSection />} />
           <Route path="/learnings" element={<HierarchicalLearningTags />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
+          <Route path="/blogs" element={<BlogsPage />} />
           <Route
             path="/project-management"
             element={<ProjectManagementPage />}

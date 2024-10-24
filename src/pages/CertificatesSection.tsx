@@ -38,7 +38,7 @@ const CertificateCard: React.FC<{
 }> = ({ certificate, onClick }) => {
   return (
     <Card
-      className="w-full bg-gradient-to-r from-blue-100 to-purple-100 border-0 overflow-hidden cursor-pointer transition-transform transform hover:scale-105 flex flex-col h-full"
+      className="w-full   shadow-lg overflow-hidden cursor-pointer transition-transform transform hover:scale-105 flex flex-col h-full"
       onClick={onClick}
     >
       <div className="relative overflow-hidden">
@@ -163,7 +163,7 @@ const CertificateDetail: React.FC<{
 export default function CertificatesSection() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTag, setActiveTag] = useState("Any topic");
+  const [activeTag, setActiveTag] = useState("Machine Learning");
   const [selectedCertificate, setSelectedCertificate] =
     useState<Certificate | null>(null);
 
@@ -194,17 +194,24 @@ export default function CertificatesSection() {
         );
 
   return (
-    <div className="py-12 px-8 bg-gradient-to-b from-white to-gray-100 font-mono">
+    <div className="py-12 px-8 bg-gradient-to-br from-white to-gray-50 font-mono">
       <div className="max-w-6xl mx-auto">
         <motion.h2
-          className="text-4xl font-bold mb-8 text-center"
+          className="text-4xl font-bold mb-2 text-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           Explore my Certificates
         </motion.h2>
-
+        <motion.p 
+          className="text-gray-600 mb-8 text-center"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          Explore my collection of certificates and certifications, showcasing my expertise in various domains.
+        </motion.p>
         <motion.div
           className="flex flex-wrap justify-center gap-2 mb-8"
           initial={{ opacity: 0, y: -20 }}

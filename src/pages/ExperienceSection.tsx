@@ -104,12 +104,12 @@ export default function ExperienceSection() {
 
   return (
     <motion.div 
-      className="flex items-center justify-center bg-gradient-to-b from-white to-gray-100 pb-16"
+      className="flex items-center justify-center bg-gradient-to-br from-white to-gray-50 pb-16"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="bg-gradient-to-b from-white to-gray-100 text-black p-8 font-sans max-w-4xl w-full">
+      <div className=" text-black p-8 font-sans max-w-4xl w-full">
         <motion.h2 
           className="text-4xl font-bold mb-2 text-center"
           initial={{ y: -20, opacity: 0 }}
