@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db } from '../firebase';  // Adjust this import based on your Firebase setup
+import { db,auth } from '../firebase';  // Adjust this import based on your Firebase setup
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast"
+import { useNavigate } from 'react-router-dom';
 
 
 const storage = getStorage();
@@ -41,8 +42,12 @@ export default function ProjectManagement() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
+    if (!auth.currentUser) {
+      navigate('/login')
+      return
+    }
     fetchProjects();
   }, []);
 

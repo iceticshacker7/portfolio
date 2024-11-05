@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useNavigate } from 'react-router-dom';
 
 const storage = getStorage();
 
@@ -43,9 +44,12 @@ export default function DirectoryManagementPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      navigate('/login')
+      return
+    }
     fetchDirectories();
   }, []);
 
