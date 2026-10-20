@@ -1,445 +1,204 @@
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db,auth } from '../firebase';  // Adjust this import based on your Firebase setup
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "@/hooks/use-toast"
-import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Edit, Trash2, Save, X, Loader2, Star } from 'lucide-react';
+import type { Project } from '@shared/schemas';
+import { api, useApi } from '@/lib/api';
+import { withToast } from '@/lib/notify';
+import { CheckboxField, ContentBlocksEditor, Field, ListInput, UrlOrUpload } from './form';
 
+type ProjectDraft = Omit<Project, 'id'> & { id?: string };
 
-const storage = getStorage();
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  subtags: string[];
-  image: string;
-  youtube: string;
-  notebookUrl: string;
-  githubUrl: string;
-  liveUrl: string;
-  sections: {
-    title: string;
-    content: {
-      type: 'text' | 'image' | 'gif' | 'notebook' | 'code' | 'html';
-      content: string;
-      language?: string;
-    }[];
-  }[];
-}
+const emptyProject = (): ProjectDraft => ({
+  title: '',
+  description: '',
+  tags: [],
+  subtags: [],
+  keyPoints: [],
+  image: '',
+  youtube: '',
+  notebookUrl: '',
+  githubUrl: '',
+  liveUrl: '',
+  blogUrl: '',
+  featured: false,
+  order: 0,
+  sections: [],
+});
 
 export default function ProjectManagement() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [currentProject, setCurrentProject] = useState<Partial<Project> | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (!auth.currentUser) {
-      navigate('/login')
-      return
-    }
-    fetchProjects();
-  }, []);
+  const { data: projects, loading, reload } = useApi<Project[]>('/projects', []);
+  const [current, setCurrent] = useState<ProjectDraft | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const fetchProjects = async () => {
-    const querySnapshot = await getDocs(collection(db, 'projects'));
-    const fetchedProjects = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-    setProjects(fetchedProjects);
-  };
+  const set = <K extends keyof ProjectDraft>(key: K, value: ProjectDraft[K]) =>
+    setCurrent((prev) => (prev ? { ...prev, [key]: value } : prev));
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCurrentProject(prev => {
-      if (!prev) return null;
-      if (name === 'tags' || name === 'subtags') {
-        return { ...prev, [name]: value.split(',').map(item => item.trim()) };
-      }
-      return { ...prev, [name]: value };
-    });
-  };
-
-  const handleSectionChange = (index: number, field: string, value: any) => {
-    setCurrentProject(prev => {
-      if (!prev || !prev.sections) return prev;
-      const newSections = [...prev.sections];
-      newSections[index] = { ...newSections[index], [field]: value };
-      return { ...prev, sections: newSections };
-    });
-  };
-
-  const handleContentChange = (sectionIndex: number, contentIndex: number, field: string, value: any) => {
-    setCurrentProject(prev => {
-      if (!prev || !prev.sections) return prev;
-      const newSections = [...prev.sections];
-      const newContent = [...newSections[sectionIndex].content];
-      newContent[contentIndex] = { ...newContent[contentIndex], [field]: value };
-      newSections[sectionIndex] = { ...newSections[sectionIndex], content: newContent };
-      return { ...prev, sections: newSections };
-    });
-  };
-
-  const handleAddSection = () => {
-    setCurrentProject(prev => {
-      if (!prev) return prev;
-      const newSections = [...(prev.sections || []), { title: '', content: [] }];
-      return { ...prev, sections: newSections };
-    });
-  };
-
-  const handleAddContent = (sectionIndex: number) => {
-    setCurrentProject(prev => {
-      if (!prev || !prev.sections) return prev;
-      const newSections = [...prev.sections];
-      newSections[sectionIndex].content.push({ type: 'text', content: '' });
-      return { ...prev, sections: newSections };
-    });
-  };
-
-  const handleDeleteSection = (index: number) => {
-    setCurrentProject(prev => {
-      if (!prev || !prev.sections) return prev;
-      const newSections = prev.sections.filter((_, i) => i !== index);
-      return { ...prev, sections: newSections };
-    });
-  };
-
-  const handleDeleteContent = (sectionIndex: number, contentIndex: number) => {
-    setCurrentProject(prev => {
-      if (!prev || !prev.sections) return prev;
-      const newSections = [...prev.sections];
-      newSections[sectionIndex].content = newSections[sectionIndex].content.filter((_, i) => i !== contentIndex);
-      return { ...prev, sections: newSections };
-    });
-  };
-
-  const handleFileUpload = async (file: File, field: string) => {
-    try {
-      setIsUploading(true);
-      const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      if (field.startsWith('sections')) {
-        const [, sectionIndex, , contentIndex] = field.split(/\[|\]/).filter(Boolean);
-        handleContentChange(parseInt(sectionIndex), parseInt(contentIndex), 'content', downloadURL);
-      } else {
-        setCurrentProject(prev => prev ? { ...prev, [field]: downloadURL } : null);
-      }
-      
-      toast({
-        title: "File uploaded successfully",
-        description: "The file has been uploaded and the URL has been saved.",
-      });
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Error uploading file",
-        description: "There was an error uploading the file. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  const setSection = (index: number, patch: Partial<ProjectDraft['sections'][number]>) =>
+    setCurrent((prev) =>
+      prev ? { ...prev, sections: prev.sections.map((s, i) => (i === index ? { ...s, ...patch } : s)) } : prev,
+    );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentProject) return;
-
-    try {
-      const projectData = {
-        ...currentProject,
-        sections: currentProject.sections?.map(section => ({
-          ...section,
-          content: section.content.map(content => ({
-            ...content,
-            content: content.content || ''
-          }))
-        }))
-      };
-
-      if (isEditing && currentProject.id) {
-        await updateDoc(doc(db, 'projects', currentProject.id), projectData);
-      } else {
-        await addDoc(collection(db, 'projects'), projectData);
-      }
-
-      fetchProjects();
-      setCurrentProject(null);
-      setIsEditing(false);
-      setIsDialogOpen(false);
-      toast({
-        title: isEditing ? "Project updated" : "Project created",
-        description: `The project has been ${isEditing ? 'updated' : 'created'} successfully.`,
-      });
-    } catch (error) {
-      console.error('Error saving project:', error);
-      toast({
-        title: "Error saving project",
-        description: "There was an error saving the project. Please try again.",
-        variant: "destructive",
-      });
+    if (!current) return;
+    setSaving(true);
+    const { id, ...body } = current;
+    const saved = await withToast(
+      () => (id ? api.put(`/projects/${id}`, body) : api.post('/projects', body)),
+      id ? 'Project updated' : 'Project created',
+    );
+    setSaving(false);
+    if (saved) {
+      setCurrent(null);
+      reload();
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      try {
-        await deleteDoc(doc(db, 'projects', id));
-        fetchProjects();
-        toast({
-          title: "Project deleted",
-          description: "The project has been deleted successfully.",
-        });
-      } catch (error) {
-        console.error('Error deleting project:', error);
-        toast({
-          title: "Error deleting project",
-          description: "There was an error deleting the project. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const openEditDialog = (project: Project) => {
-    setCurrentProject(project);
-    setIsEditing(true);
-    setIsDialogOpen(true);
-  };
-
-  const openAddDialog = () => {
-    setCurrentProject({
-      title: '',
-      description: '',
-      tags: [],
-      subtags: [],
-      image: '',
-      youtube: '',
-      notebookUrl: '',
-      githubUrl: '',
-      liveUrl: '',
-      sections: []
-    });
-    setIsEditing(false);
-    setIsDialogOpen(true);
+  const handleDelete = async (project: Project) => {
+    if (!window.confirm(`Delete "${project.title}"?`)) return;
+    if (await withToast(() => api.del(`/projects/${project.id}`), 'Project deleted')) reload();
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Project Management</h1>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="mb-4" onClick={openAddDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Project
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h1 className="text-2xl font-bold">Projects</h1>
+        <Button onClick={() => setCurrent(emptyProject())}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add New Project
+        </Button>
+      </div>
+
+      <Dialog open={current !== null} onOpenChange={(open) => !open && setCurrent(null)}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isEditing ? 'Edit Project' : 'Add New Project'}</DialogTitle>
+            <DialogTitle>{current?.id ? 'Edit Project' : 'Add New Project'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              name="title"
-              placeholder="Project Title"
-              value={currentProject?.title || ''}
-              onChange={handleInputChange}
-              required
-            />
-            <Textarea
-              name="description"
-              placeholder="Project Description"
-              value={currentProject?.description || ''}
-              onChange={handleInputChange}
-              required
-            />
-            <Input
-              name="tags"
-              placeholder="Tags (comma-separated)"
-              value={currentProject?.tags?.join(', ') || ''}
-              onChange={handleInputChange}
-            />
-            <Input
-              name="subtags"
-              placeholder="Subtags (comma-separated)"
-              value={currentProject?.subtags?.join(', ') || ''}
-              onChange={handleInputChange}
-            />
-            <div>
-              <label className="block mb-2">Project Image</label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], 'image')}
-                disabled={isUploading}
-              />
-              {currentProject?.image && <p className="mt-2">Current image: {currentProject.image}</p>}
-            </div>
-            <Input
-              name="youtube"
-              placeholder="YouTube URL"
-              value={currentProject?.youtube || ''}
-              onChange={handleInputChange}
-            />
-            <Input
-              name="notebookUrl"
-              placeholder="Notebook URL"
-              value={currentProject?.notebookUrl || ''}
-              onChange={handleInputChange}
-            />
-            <Input
-              name="githubUrl"
-              placeholder="GitHub URL"
-              value={currentProject?.githubUrl || ''}
-              onChange={handleInputChange}
-            />
-            <Input
-              name="liveUrl"
-              placeholder="Live URL"
-              value={currentProject?.liveUrl || ''}
-              onChange={handleInputChange}
-            />
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Sections</h3>
-              {currentProject?.sections?.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="border p-4 rounded-md relative">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => handleDeleteSection(sectionIndex)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    placeholder="Section Title"
-                    value={section.title}
-                    onChange={(e) => handleSectionChange(sectionIndex, 'title', e.target.value)}
-                    className="mb-2"
-                  />
-                  {section.content.map((content, contentIndex) => (
-                    <div key={contentIndex} className="mb-2 border p-2 rounded-md relative">
+          {current && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Field label="Title">
+                <Input value={current.title} onChange={(e) => set('title', e.target.value)} required />
+              </Field>
+              <Field label="Description">
+                <Textarea rows={4} value={current.description} onChange={(e) => set('description', e.target.value)} />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Tags" hint="Comma-separated. These become the filter buttons on /projects.">
+                  <ListInput value={current.tags} onChange={(v) => set('tags', v)} />
+                </Field>
+                <Field label="Subtags" hint="Comma-separated, e.g. libraries used.">
+                  <ListInput value={current.subtags} onChange={(v) => set('subtags', v)} />
+                </Field>
+              </div>
+              <Field label="Key points" hint="Comma-separated, shown on the home page card.">
+                <ListInput value={current.keyPoints} onChange={(v) => set('keyPoints', v)} />
+              </Field>
+              <Field label="Banner image">
+                <UrlOrUpload value={current.image} onChange={(v) => set('image', v)} />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="YouTube video" hint="Full URL or video id.">
+                  <Input value={current.youtube} onChange={(e) => set('youtube', e.target.value)} />
+                </Field>
+                <Field label="Notebook URL">
+                  <UrlOrUpload value={current.notebookUrl} onChange={(v) => set('notebookUrl', v)} accept=".ipynb,.html,.pdf" preview={false} />
+                </Field>
+                <Field label="GitHub URL">
+                  <Input value={current.githubUrl} onChange={(e) => set('githubUrl', e.target.value)} />
+                </Field>
+                <Field label="Live URL">
+                  <Input value={current.liveUrl} onChange={(e) => set('liveUrl', e.target.value)} />
+                </Field>
+                <Field label="Blog URL">
+                  <Input value={current.blogUrl} onChange={(e) => set('blogUrl', e.target.value)} />
+                </Field>
+                <Field label="Sort order" hint="Lower numbers come first.">
+                  <Input type="number" value={current.order} onChange={(e) => set('order', Number(e.target.value) || 0)} />
+                </Field>
+              </div>
+              <CheckboxField label="Feature on the home page" checked={current.featured} onChange={(v) => set('featured', v)} />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Sections</h3>
+                {current.sections.map((section, sectionIndex) => (
+                  <div key={sectionIndex} className="border p-4 rounded-md space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Section Title"
+                        value={section.title}
+                        onChange={(e) => setSection(sectionIndex, { title: e.target.value })}
+                      />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleDeleteContent(sectionIndex, contentIndex)}
+                        aria-label="Remove section"
+                        onClick={() => set('sections', current.sections.filter((_, i) => i !== sectionIndex))}
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                      <Select
-                        onValueChange={(value) => handleContentChange(sectionIndex, contentIndex, 'type', value)}
-                        value={content.type}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Content Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Text</SelectItem>
-                          <SelectItem value="image">Image</SelectItem>
-                          <SelectItem value="gif">GIF</SelectItem>
-                          <SelectItem value="notebook">Notebook</SelectItem>
-                          <SelectItem value="code">Code</SelectItem>
-                          <SelectItem value="html">HTML</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {content.type === 'code' && (
-                        <Input
-                          placeholder="Language"
-                          value={content.language || ''}
-                          onChange={(e) => handleContentChange(sectionIndex, contentIndex, 'language', e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
-                      {['image', 'gif'].includes(content.type) ? (
-                        <div className="mt-2">
-                          <Input
-                            type="file"
-                            accept={content.type === 'gif' ? 'image/gif' : 'image/*'}
-                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], `sections[${sectionIndex}].content[${contentIndex}].content`)}
-                            disabled={isUploading}
-                          />
-                          {content.content && <p className="mt-2">Current file: {content.content}</p>}
-                        </div>
-                      ) : (
-                        <Textarea
-                          placeholder="Content"
-                          value={content.content}
-                          onChange={(e) => handleContentChange(sectionIndex, contentIndex, 'content', e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
                     </div>
-                  ))}
-                  <Button type="button" onClick={() => handleAddContent(sectionIndex)} className="mt-2">
-                    Add Content
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" onClick={handleAddSection}>Add Section</Button>
-            </div>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? (
-                
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Project
-                </>
-              )}
-            </Button>
-          </form>
+                    <ContentBlocksEditor blocks={section.content} onChange={(content) => setSection(sectionIndex, { content })} />
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => set('sections', [...current.sections, { title: '', content: [] }])}>
+                  Add Section
+                </Button>
+              </div>
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save Project
+              </Button>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
-      <ScrollArea className="h-[600px] w-full rounded-md border p-4">
-        {projects.map((project) => (
-          <div key={project.id} className="mb-4 p-4 border rounded-md">
-            <h2 className="text-xl font-semibold">{project.title}</h2>
-            <p className="text-gray-600 mb-2">{project.description}</p>
-            <div className="flex space-x-2 mb-2">
-              {project.tags.map((tag, index) => (
-                <span key={index} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
-                  {tag}
-                </span>
-              ))}
+
+      {loading ? (
+        <Loader2 className="h-6 w-6 animate-spin" />
+      ) : projects.length === 0 ? (
+        <p className="text-muted-foreground">No projects yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {projects.map((project) => (
+            <div key={project.id} className="p-4 border rounded-md flex flex-col sm:flex-row gap-4">
+              {project.image && <img src={project.image} alt="" className="w-full sm:w-32 h-20 object-cover rounded" />}
+              <div className="flex-grow min-w-0">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  {project.title}
+                  {project.featured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" aria-label="Featured" />}
+                </h2>
+                <p className="text-gray-600 text-sm line-clamp-2">{project.description}</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {project.tags.map((tag) => (
+                    <span key={tag} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
+                      {tag}
+                    </span>
+                  ))}
+                  {project.subtags.map((tag) => (
+                    <span key={tag} className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex sm:flex-col gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={() => setCurrent({ ...emptyProject(), ...project })}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleDelete(project)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
             </div>
-            <div className="flex space-x-2 mb-2">
-              {project.subtags.map((subtag, index) => (
-                <span key={index} className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">
-                  {subtag}
-                </span>
-              ))}
-            </div>
-            <div className="flex space-x-2 mt-2">
-              <Button variant="outline" size="sm" onClick={() => openEditDialog(project)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(project.id)}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </div>
-        ))}
-      </ScrollArea>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

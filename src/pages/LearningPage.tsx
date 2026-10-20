@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import type { DirectoryItem } from "@shared/schemas";
+import { useApi } from "@/lib/api";
+import { buildDirectoryTree } from "@/lib/content";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronRight,
@@ -17,28 +18,8 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
-interface LearningItem {
-  id: string;
-  title: string;
-  keywords: string[];
-  content: {
-    type: "text" | "image" | "gif" | "notebook" | "code" | "html";
-    category: boolean;
-    content: string;
-    language?: string;
-  }[];
-}
-
-interface DirectoryItem {
-  id: string;
-  name: string;
-  type: "folder" | "file";
-  parentId: string | null;
-  children?: DirectoryItem[];
-  learningItem?: LearningItem;
-}
 const ShimmerCard: React.FC = () => {
   return (
     <Card className="animate-pulse">
@@ -61,7 +42,7 @@ const DirectoryView: React.FC<{
   onSelect: (item: DirectoryItem) => void;
 }> = ({ items, onSelect }) => {
   return (
-    <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border p-4">
+    <ScrollArea className="max-h-[calc(100vh-200px)] w-full rounded-md border p-4">
       {items.map((item) => (
         <DirectoryItemView
           key={item.id}
@@ -95,6 +76,7 @@ const DirectoryItemView: React.FC<{
           <Button
             variant="ghost"
             className="h-8 w-8 p-0"
+            aria-label={isOpen ? `Collapse ${item.name}` : `Expand ${item.name}`}
             onClick={() => {
               toggleOpen();
               onSelect(item);
@@ -106,8 +88,17 @@ const DirectoryItemView: React.FC<{
               <ChevronRight className="h-4 w-4" />
             )}
           </Button>
-          <Folder className="h-4 w-4 inline-block mr-2 text-blue-500" />
-          <span className="ml-1 text-sm font-medium">{item.name}</span>
+          <button
+            type="button"
+            className="text-sm font-medium hover:text-blue-600"
+            onClick={() => {
+              toggleOpen();
+              onSelect(item);
+            }}
+          >
+            <Folder className="h-4 w-4 inline-block mr-2 text-blue-500" />
+            {item.name}
+          </button>
           <AnimatePresence>
             {isOpen && item.children && (
               <motion.div
@@ -131,20 +122,22 @@ const DirectoryItemView: React.FC<{
       ) : (
         <div className="flex items-center py-1">
           <File className="h-4 w-4 text-gray-400 mr-2" />
-          <Link to={`/learning/${item.id}`}>
-            <Button
-              variant="link"
-              className="text-sm p-0 h-auto hover:text-blue-500 transition-colors"
-              onClick={() => onSelect(item)}
-            >
-              {item.name}
-            </Button>
+          <Link
+            to={`/learning/${item.id}`}
+            className="text-sm hover:text-blue-500 hover:underline transition-colors"
+          >
+            {item.name}
           </Link>
         </div>
       )}
     </motion.div>
   );
 };
+const summary = (item: DirectoryItem) => {
+  const text = item.learningItem?.content.find((c) => c.type === "text")?.content || "";
+  return text.length > 100 ? text.slice(0, 100) + "..." : text;
+};
+
 const ItemCard: React.FC<{ item: DirectoryItem; onClick: () => void }> = ({
   item,
   onClick,
@@ -178,7 +171,7 @@ const ItemCard: React.FC<{ item: DirectoryItem; onClick: () => void }> = ({
         <p className="text-sm text-gray-600 line-clamp-4">
           {item.type === "folder"
             ? `This folder contains ${item.children?.length || 0} items.`
-            : item.learningItem?.content[0].content.substring(0, 100) + "..."}
+            : summary(item)}
         </p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
@@ -204,71 +197,33 @@ const ItemCard: React.FC<{ item: DirectoryItem; onClick: () => void }> = ({
 };
 
 const HierarchicalLearningTags: React.FC = () => {
-  const [directories, setDirectories] = useState<DirectoryItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<DirectoryItem | null>(null);
-  const [currentItems, setCurrentItems] = useState<DirectoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: items, loading } = useApi<DirectoryItem[]>("/directories", []);
+  // The open folder lives in the URL (?folder=id) so it survives reloads and can be linked.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const directories = buildDirectoryTree(items);
 
-  useEffect(() => {
-    fetchDirectories();
-  }, []);
-
-  useEffect(() => {
-    const savedDirectory = localStorage.getItem("selectedDirectory");
-    if (savedDirectory) {
-      const parsedDirectory = JSON.parse(savedDirectory) as DirectoryItem;
-      setSelectedItem(parsedDirectory);
-      handleItemSelection(parsedDirectory);
+  const findItem = (list: DirectoryItem[], id: string | null): DirectoryItem | null => {
+    if (!id) return null;
+    for (const item of list) {
+      if (item.id === id) return item;
+      const found = findItem(item.children || [], id);
+      if (found) return found;
     }
-  }, []);
-
-  const fetchDirectories = async () => {
-    const querySnapshot = await getDocs(collection(db, "directories"));
-    const fetchedDirectories = querySnapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as DirectoryItem)
-    );
-    const structuredDirectories = buildDirectoryTree(fetchedDirectories);
-    setDirectories(structuredDirectories);
-    setCurrentItems(structuredDirectories);
+    return null;
   };
+  const selectedItem = findItem(directories, searchParams.get("folder"));
+  const currentItems = selectedItem ? selectedItem.children || [] : directories;
 
-  const buildDirectoryTree = (items: DirectoryItem[]): DirectoryItem[] => {
-    const itemMap = new Map<string, DirectoryItem>();
-    items.forEach((item) => itemMap.set(item.id, { ...item, children: [] }));
-
-    const rootItems: DirectoryItem[] = [];
-    itemMap.forEach((item) => {
-      if (item.parentId === null) {
-        rootItems.push(item);
-      } else {
-        const parent = itemMap.get(item.parentId);
-        if (parent) {
-          parent.children = parent.children || [];
-          parent.children.push(item);
-        }
-      }
-    });
-
-    return rootItems;
-  };
-
-  const handleItemSelection = async (item: DirectoryItem) => {
-    setSelectedItem(item);
-    localStorage.setItem("selectedDirectory", JSON.stringify(item));
-    setIsLoading(true);
-
-    if (item.type === "folder") {
-      setCurrentItems(item.children || []);
-    }
-
-    setIsLoading(false);
+  const handleItemSelection = (item: DirectoryItem) => {
+    if (item.type !== "folder") return;
+    setSearchParams({ folder: item.id }, { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 font-mono py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <motion.h1
-          className="text-4xl font-bold mb-2 text-center"
+          className="text-3xl sm:text-4xl font-bold mb-2 text-center"
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -292,7 +247,17 @@ const HierarchicalLearningTags: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <h2 className="text-2xl font-bold mb-4">Topics</h2>
-            <DirectoryView items={directories} onSelect={handleItemSelection} />
+            {loading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-5 bg-gray-200 rounded animate-pulse" />
+                ))}
+              </div>
+            ) : directories.length === 0 ? (
+              <p className="text-gray-500">No topics yet.</p>
+            ) : (
+              <DirectoryView items={directories} onSelect={handleItemSelection} />
+            )}
           </motion.div>
           <motion.div
             className="w-full lg:w-2/3"
@@ -301,25 +266,36 @@ const HierarchicalLearningTags: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-4">Contents</h2>
-              {selectedItem ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {isLoading
-                    ? Array(4)
-                        .fill(0)
-                        .map((_, index) => <ShimmerCard key={index} />)
-                    : currentItems.map((item) => (
-                        <ItemCard
-                          key={item.id}
-                          item={item}
-                          onClick={() => handleItemSelection(item)}
-                        />
-                      ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">
-                  Select a folder to view its contents.
-                </p>
+              <div className="flex items-center justify-between mb-4 gap-2">
+                <h2 className="text-2xl font-bold">{selectedItem ? selectedItem.name : "Contents"}</h2>
+                {selectedItem && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const parent = findItem(directories, selectedItem.parentId);
+                      setSearchParams(parent ? { folder: parent.id } : {}, { replace: true });
+                    }}
+                  >
+                    Up one level
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {loading
+                  ? Array(4)
+                      .fill(0)
+                      .map((_, index) => <ShimmerCard key={index} />)
+                  : currentItems.map((item) => (
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        onClick={() => handleItemSelection(item)}
+                      />
+                    ))}
+              </div>
+              {!loading && currentItems.length === 0 && (
+                <p className="text-gray-500 text-center py-8">This folder is empty.</p>
               )}
             </div>
           </motion.div>

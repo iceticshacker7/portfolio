@@ -1,32 +1,13 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import type { Certificate } from "@shared/schemas";
+import { useApi } from "@/lib/api";
+import { uniqueSorted } from "@/lib/content";
 import { X, CheckCircle, Maximize2 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
-interface Certificate {
-  id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  image: string;
-  credentialUrl: string;
-  date: string;
-  instituteName: string;
-  location: string;
-}
-
-const allTags = [
-  "Any topic",
-  "Machine Learning",
-  "Programming-Languages",
-  "Computer-Networking",
-  "Miscellaneous",
-];
+const ANY = "Any topic";
 
 const ShimmerCard = () => (
   <div className="w-full h-64 bg-gray-200 animate-pulse rounded-lg"></div>
@@ -42,11 +23,16 @@ const CertificateCard: React.FC<{
       onClick={onClick}
     >
       <div className="relative overflow-hidden">
-        <img
-          src={certificate.image}
-          alt={`${certificate.title} Banner`}
-          className="w-full h-32 object-cover"
-        />
+        {certificate.image ? (
+          <img
+            src={certificate.image}
+            alt={`${certificate.title} Banner`}
+            loading="lazy"
+            className="w-full h-32 object-cover"
+          />
+        ) : (
+          <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-purple-100" />
+        )}
       </div>
       <CardContent className="p-3 flex-grow">
         <h3 className="text-lg font-semibold mt-1 hover:underline cursor-pointer">
@@ -100,20 +86,22 @@ const CertificateDetail: React.FC<{
             <h2 className="text-2xl font-bold">{certificate.title}</h2>
             <button
               onClick={onClose}
+              aria-label="Close"
               className="text-gray-500 hover:text-gray-700"
             >
               <X size={24} />
             </button>
           </div>
           <div className="relative group">
-            <img
+            {certificate.image && <img
               src={certificate.image}
               alt={certificate.title}
-              className="w-full h-48 object-cover rounded-lg mb-4"
-            />
+              className="w-full h-48 object-contain bg-gray-50 rounded-lg mb-4"
+            />}
             <button
               onClick={() => setIsImageExpanded(true)}
-              className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Expand image"
+              className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full sm:opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
             >
               <Maximize2 size={20} />
             </button>
@@ -129,14 +117,14 @@ const CertificateDetail: React.FC<{
               </span>
             ))}
           </div>
-          <p className="text-sm text-gray-600 mb-2">Date: {certificate.date}</p>
+          {certificate.date && <p className="text-sm text-gray-600 mb-2">Date: {certificate.date}</p>}
           <p className="text-sm text-gray-600 mb-2">
             Institute: {certificate.instituteName}
           </p>
-          <p className="text-sm text-gray-600 mb-4">
+          {certificate.location && <p className="text-sm text-gray-600 mb-4">
             Location: {certificate.location}
-          </p>
-          <a
+          </p>}
+          {certificate.credentialUrl && <a
             href={certificate.credentialUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -144,11 +132,12 @@ const CertificateDetail: React.FC<{
           >
             <CheckCircle className="w-5 h-5 mr-2" />
             <span>Verify Certificate</span>
-          </a>
+          </a>}
         </div>
       </motion.div>
       <Dialog open={isImageExpanded} onOpenChange={setIsImageExpanded}>
         <DialogContent className="max-w-4xl w-full p-0">
+          <DialogTitle className="sr-only">{certificate.title}</DialogTitle>
           <img
             src={certificate.image}
             alt={certificate.title}
@@ -161,43 +150,24 @@ const CertificateDetail: React.FC<{
 };
 
 export default function CertificatesSection() {
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTag, setActiveTag] = useState("Machine Learning");
+  const { data: certificates, loading, error } = useApi<Certificate[]>("/certificates", []);
+  const [activeTag, setActiveTag] = useState(ANY);
   const [selectedCertificate, setSelectedCertificate] =
     useState<Certificate | null>(null);
-
-  useEffect(() => {
-    const fetchCertificates = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "certificates"));
-        const certificatesData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Certificate[];
-        setCertificates(certificatesData);
-      } catch (error) {
-        console.error("Error fetching certificates:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCertificates();
-  }, []);
+  const allTags = [ANY, ...uniqueSorted(certificates.flatMap((c) => c.tags))];
 
   const filteredCertificates =
-    activeTag === "Any topic"
+    activeTag === ANY
       ? certificates
       : certificates.filter((certificate) =>
           certificate.tags.includes(activeTag)
         );
 
   return (
-    <div className="py-12 px-8 bg-gradient-to-br from-white to-gray-50 font-mono">
+    <div className="py-12 px-4 sm:px-8 bg-gradient-to-br from-white to-gray-50 font-mono">
       <div className="max-w-6xl mx-auto">
         <motion.h2
-          className="text-4xl font-bold mb-2 text-center"
+          className="text-3xl sm:text-4xl font-bold mb-2 text-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -270,6 +240,11 @@ export default function CertificatesSection() {
                 ))}
           </AnimatePresence>
         </motion.div>
+        {!loading && filteredCertificates.length === 0 && (
+          <p className="text-center text-gray-500 mt-8">
+            {error ? "Could not load certificates right now. Please try again later." : "No certificates in this category yet."}
+          </p>
+        )}
       </div>
       <AnimatePresence>
         {selectedCertificate && (

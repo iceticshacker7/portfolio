@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ChevronDown } from "lucide-react";
 import ContactMeModal from "./ContactMeModal";
+import { useProfile } from "@/lib/profile";
 
 const navItems = [
   { name: "Blogs", href: "/blogs" },
@@ -17,6 +18,7 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const { profile } = useProfile();
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -40,14 +42,16 @@ export default function Header() {
           <div className="flex justify-start lg:w-0 lg:flex-1">
             <Link to="/" className="flex items-center space-x-2">
               <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
-                Portfolio
+                {profile.name || 'Portfolio'}
               </span>
             </Link>
           </div>
           <div className="flex items-center">
-            <div className="hidden md:flex" ref={dropdownRef}>
+            <div className="hidden md:flex relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                aria-expanded={isDropdownOpen}
+                aria-haspopup="menu"
                 className="text-gray-500 hover:text-gray-900 flex items-center space-x-1 focus:outline-none"
               >
                 <span>Sections</span>
@@ -58,7 +62,7 @@ export default function Header() {
                 />
               </button>
               {isDropdownOpen && (
-                <div className="absolute mt-8 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                   <div
                     className="py-1"
                     role="menu"
@@ -87,11 +91,6 @@ export default function Header() {
               >
                 Contact Me
               </button>
-
-              <ContactMeModal
-                isOpen={isContactModalOpen}
-                onClose={() => setIsContactModalOpen(false)}
-              />
             </div>
             <div className="md:hidden">
               <button
@@ -128,15 +127,23 @@ export default function Header() {
               {item.name}
             </Link>
           ))}
-          <a
-            href="#"
-            className="block px-3 py-2 rounded-md text-base font-medium text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500"
-            onClick={() => setIsMenuOpen(false)}
+          <button
+            type="button"
+            className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500"
+            onClick={() => {
+              setIsMenuOpen(false);
+              setIsContactModalOpen(true);
+            }}
           >
             Contact Me
-          </a>
+          </button>
         </div>
       </div>
+      {/* Rendered once, outside the desktop-only block, so the mobile button can open it too. */}
+      <ContactMeModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
     </header>
   );
 }

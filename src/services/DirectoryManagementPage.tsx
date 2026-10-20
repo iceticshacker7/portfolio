@@ -1,449 +1,218 @@
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
-import { db, auth } from '../firebase';  // Adjust Firebase import path
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Save, FolderPlus, FilePlus, File, ChevronDown, ChevronRight, X, Link, Upload } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Edit, Trash2, Save, FolderPlus, FilePlus, File, Folder, ChevronDown, ChevronRight, Loader2, Star } from 'lucide-react';
+import type { DirectoryItem } from '@shared/schemas';
+import { api, useApi } from '@/lib/api';
+import { buildDirectoryTree } from '@/lib/content';
+import { withToast } from '@/lib/notify';
+import { CheckboxField, ContentBlocksEditor, Field, ListInput } from './form';
 
-const storage = getStorage();
+type Draft = Omit<DirectoryItem, 'id' | 'children'> & { id?: string };
 
-interface LearningItem {
-  id: string;
-  title: string;
-  keywords: string[];
-  content: {
-    type: 'text' | 'image' | 'gif' | 'notebook' | 'code' | 'html';
-    category: boolean;
-    content: string;
-    language?: string;
-    fileType?: 'link' | 'upload';
-  }[];
+const toBody = ({ id: _id, ...rest }: Draft) => rest;
+
+function draftFrom(item: DirectoryItem): Draft {
+  const { children: _children, ...rest } = item;
+  return {
+    ...rest,
+    learningItem: item.type === 'file' ? { title: '', keywords: [], content: [], ...item.learningItem } : undefined,
+  };
 }
 
-interface DirectoryItem {
-  id: string;
-  name: string;
-  type: 'folder' | 'file';
-  parentId: string | null;
-  children?: DirectoryItem[];
-  learningItem?: LearningItem;
-}
+// Defined at module level (not inside the page) so expanded/editing state isn't
+// lost every time the page re-renders.
+const TreeRow: React.FC<{
+  item: DirectoryItem;
+  depth: number;
+  onRename: (item: DirectoryItem, name: string) => void;
+  onDelete: (item: DirectoryItem) => void;
+  onAdd: (parentId: string, type: 'folder' | 'file') => void;
+  onEdit: (item: DirectoryItem) => void;
+}> = ({ item, depth, ...actions }) => {
+  const [isOpen, setIsOpen] = useState(depth === 0);
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(item.name);
+  const childCount = item.children?.length || 0;
+
+  return (
+    <div style={{ marginLeft: depth ? 20 : 0 }}>
+      <div className="flex flex-wrap items-center gap-1 py-1 border-b border-gray-100">
+        {item.type === 'folder' ? (
+          <Button variant="ghost" className="h-8 w-8 p-0" onClick={() => setIsOpen(!isOpen)} aria-label={isOpen ? 'Collapse' : 'Expand'}>
+            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+        ) : (
+          <span className="w-8" />
+        )}
+        {item.type === 'folder' ? <Folder className="h-4 w-4 text-blue-500" /> : <File className="h-4 w-4 text-muted-foreground" />}
+        {renaming ? (
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-48" autoFocus />
+        ) : (
+          <span className="text-sm font-medium px-1">
+            {item.name}
+            {item.type === 'folder' && <span className="text-xs text-muted-foreground ml-1">({childCount})</span>}
+          </span>
+        )}
+        {item.featured && <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" aria-label="Featured" />}
+        <div className="ml-auto flex">
+          <Button
+            variant="ghost"
+            size="sm"
+            title={renaming ? 'Save name' : 'Rename'}
+            onClick={() => {
+              if (renaming && name.trim() && name !== item.name) actions.onRename(item, name.trim());
+              setRenaming(!renaming);
+            }}
+          >
+            {renaming ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+          </Button>
+          {item.type === 'folder' ? (
+            <>
+              <Button variant="ghost" size="sm" title="Add sub-folder" onClick={() => actions.onAdd(item.id, 'folder')}>
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" title="Add learning page" onClick={() => actions.onAdd(item.id, 'file')}>
+                <FilePlus className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => actions.onEdit(item)}>
+              Edit content
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" title="Delete" onClick={() => actions.onDelete(item)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      {isOpen &&
+        item.children?.map((child) => <TreeRow key={child.id} item={child} depth={depth + 1} {...actions} />)}
+    </div>
+  );
+};
 
 export default function DirectoryManagementPage() {
-  const [directories, setDirectories] = useState<DirectoryItem[]>([]);
-  const [currentItem, setCurrentItem] = useState<Partial<DirectoryItem> | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (!auth.currentUser) {
-      navigate('/login')
-      return
-    }
-    fetchDirectories();
-  }, []);
+  const { data, loading, reload } = useApi<DirectoryItem[]>('/directories', []);
+  const tree = buildDirectoryTree(data);
+  const [current, setCurrent] = useState<Draft | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const fetchDirectories = async () => {
-    const querySnapshot = await getDocs(collection(db, 'directories'));
-    const fetchedDirectories = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DirectoryItem));
-    const structuredDirectories = buildDirectoryTree(fetchedDirectories);
-    setDirectories(structuredDirectories);
-  };
-
-  const buildDirectoryTree = (items: DirectoryItem[]): DirectoryItem[] => {
-    const itemMap = new Map<string, DirectoryItem>();
-    items.forEach(item => itemMap.set(item.id, { ...item, children: [] }));
-    
-    const rootItems: DirectoryItem[] = [];
-    itemMap.forEach(item => {
-      if (item.parentId === null) {
-        rootItems.push(item);
-      } else {
-        const parent = itemMap.get(item.parentId);
-        if (parent) {
-          parent.children = parent.children || [];
-          parent.children.push(item);
-        }
-      }
+  const openAdd = (parentId: string | null, type: 'folder' | 'file') =>
+    setCurrent({
+      name: '',
+      type,
+      parentId,
+      featured: false,
+      order: 0,
+      learningItem: type === 'file' ? { title: '', keywords: [], content: [] } : undefined,
     });
-    
-    return rootItems;
-  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCurrentItem((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        learningItem: {
-          ...prev.learningItem,
-          [name]: name === 'keywords' ? value.split(',').map(k => k.trim()) : value
-        } as LearningItem
-      };
-    });
-  };
-
-  const handleContentChange = (index: number, field: keyof LearningItem['content'][0], value: any) => {
-    setCurrentItem(prev => {
-      if (!prev || !prev.learningItem) return prev;
-      return {
-        ...prev,
-        learningItem: {
-          ...prev.learningItem,
-          content: prev.learningItem.content?.map((c, i) =>
-            i === index ? { ...c, [field]: value } : c
-          ) || []
-        }
-      };
-    });
-  };
-
-  const handleAddContent = () => {
-    setCurrentItem(prev => {
-      if (!prev || !prev.learningItem) return prev;
-      return {
-        ...prev,
-        learningItem: {
-          ...prev.learningItem,
-          content: [
-            ...(prev.learningItem.content || []),
-            { type: 'text', category: false, content: '', fileType: 'link' }
-          ]
-        }
-      };
-    });
-  };
-
-  const handleDeleteContent = (index: number) => {
-    setCurrentItem(prev => {
-      if (!prev || !prev.learningItem) return prev;
-      return {
-        ...prev,
-        learningItem: {
-          ...prev.learningItem,
-          content: prev.learningItem.content?.filter((_, i) => i !== index) || []
-        }
-      };
-    });
-  };
-
-  const handleFileUpload = async (index: number, file: File) => {
-    try {
-      setIsUploading(true);
-      const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      handleContentChange(index, 'content', downloadURL);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    } finally {
-      setIsUploading(false);
-    }
+  const save = async (draft: Draft, message: string) => {
+    const saved = await withToast(
+      () => (draft.id ? api.put(`/directories/${draft.id}`, toBody(draft)) : api.post('/directories', toBody(draft))),
+      message,
+    );
+    if (saved) reload();
+    return saved;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentItem) return;
-  
-    try {
-      const itemData: Partial<DirectoryItem> = {
-        name: currentItem.name!,
-        type: currentItem.type!,
-        parentId: currentItem.parentId || null,
-      };
-
-      if (currentItem.type === 'file' && currentItem.learningItem) {
-        itemData.learningItem = {
-          id: currentItem.learningItem.id || '',
-          title: currentItem.learningItem.title || '',
-          keywords: currentItem.learningItem.keywords || [],
-          content: currentItem.learningItem.content || []
-        };
-      }
-  
-      if (isEditing && currentItem.id) {
-        await updateDoc(doc(db, 'directories', currentItem.id), itemData);
-      } else {
-        await addDoc(collection(db, 'directories'), itemData);
-      }
-  
-      fetchDirectories();
-      setCurrentItem(null);
-      setIsEditing(false);
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Error saving item:', error);
-    }
+    if (!current) return;
+    setSaving(true);
+    if (await save(current, current.id ? 'Saved' : 'Created')) setCurrent(null);
+    setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      await deleteDoc(doc(db, 'directories', id));
-      // Delete all children
-      const childrenSnapshot = await getDocs(query(collection(db, 'directories'), where('parentId', '==', id)));
-      const deletePromises = childrenSnapshot.docs.map(childDoc => deleteDoc(childDoc.ref));
-      await Promise.all(deletePromises);
-      fetchDirectories();
-    }
+  const handleDelete = async (item: DirectoryItem) => {
+    const extra = item.type === 'folder' ? ' and everything inside it' : '';
+    if (!window.confirm(`Delete "${item.name}"${extra}?`)) return;
+    if (await withToast(() => api.del(`/directories/${item.id}`), 'Deleted')) reload();
   };
 
-  const openEditDialog = (item: DirectoryItem) => {
-    setCurrentItem(item);
-    setIsEditing(true);
-    setIsDialogOpen(true);
-  };
-
-  const openAddDialog = (parentId: string | null, type: 'folder' | 'file') => {
-    setCurrentItem({
-      type,
-      parentId,
-      learningItem: type === 'file' ? { id: '', title: '', keywords: [], content: [] } : undefined
-    });
-    setIsEditing(false);
-    setIsDialogOpen(true);
-  };
-
-  const DirectoryItem: React.FC<{ item: DirectoryItem; depth: number }> = ({ item, depth }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedName, setEditedName] = useState(item.name);
-  
-    const toggleOpen = () => setIsOpen(!isOpen);
-  
-    const handleEdit = async () => {
-      if (isEditing) {
-        await updateDoc(doc(db, 'directories', item.id), { name: editedName });
-        fetchDirectories();
-      }
-      setIsEditing(!isEditing);
-    };
-  
-    return (
-      <div style={{ marginLeft: `${depth * 20}px` }}>
-        {item.type === 'folder' ? (
-          <div>
-            <Button
-              variant="ghost"
-              className="h-8 w-8 p-0"
-              onClick={toggleOpen}
-            >
-              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </Button>
-            {isEditing ? (
-              <Input
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                className="inline-block w-40 ml-1"
-              />
-            ) : (
-              <span className="ml-1 text-sm font-medium">{item.name}</span>
-            )}
-            <Button variant="ghost" size="sm" onClick={handleEdit}>
-              {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openAddDialog(item.id, 'folder')}>
-              <FolderPlus className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openAddDialog(item.id, 'file')}>
-              <FilePlus className="h-4 w-4" />
-            </Button>
-            {isOpen && item.children && (
-              <div>
-                {item.children.map((child, index) => (
-                  <DirectoryItem key={index} item={child} depth={depth + 1} />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center">
-            <File className="h-4 w-4 text-muted-foreground" />
-            {isEditing ? (
-              <Input
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                className="inline-block w-40 ml-2"
-              />
-            ) : (
-              <span className="ml-2 text-sm">{item.name}</span>
-            )}
-            <Button variant="ghost" size="sm" onClick={handleEdit}>
-              {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(item)}>
-              <Edit className="h-4 w-4" /> Edit Content
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const learning = current?.learningItem;
+  const setLearning = (patch: Partial<NonNullable<Draft['learningItem']>>) =>
+    setCurrent((prev) => (prev && prev.learningItem ? { ...prev, learningItem: { ...prev.learningItem, ...patch } } : prev));
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Directory Management</h1>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="mb-4" onClick={() => openAddDialog(null, 'folder')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Root Item
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h1 className="text-2xl font-bold">Learnings</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => openAdd(null, 'file')}>
+            <FilePlus className="mr-2 h-4 w-4" />
+            Root page
           </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+          <Button onClick={() => openAdd(null, 'folder')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Root folder
+          </Button>
+        </div>
+      </div>
+      <Dialog open={current !== null} onOpenChange={(open) => !open && setCurrent(null)}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isEditing ? 'Edit Item' : 'Add New Item'}</DialogTitle>
+            <DialogTitle>
+              {current?.id ? 'Edit' : 'Add'} {current?.type === 'folder' ? 'folder' : 'learning page'}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              name="name"
-              placeholder="Item Name"
-              value={currentItem?.name || ''}
-              onChange={(e) => setCurrentItem(prev => ({ ...prev, name: e.target.value }))}
-              required
-            />
-            {currentItem?.type === 'file' && (
-              <>
-                <Input
-                  name="title"
-                  placeholder="Learning Item Title"
-                  value={currentItem?.learningItem?.title || ''}
-                  onChange={handleInputChange}
-                  required
-                />
-                <Input
-                  name="keywords"
-                  placeholder="Keywords (comma-separated)"
-                  value={currentItem?.learningItem?.keywords?.join(', ') || ''}
-                  onChange={handleInputChange}
-                />
-                {currentItem?.learningItem?.content?.map((content, index) => (
-                  <div key={index} className="space-y-2 border p-4 rounded-md relative">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => handleDeleteContent(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <Select onValueChange={(value) => handleContentChange(index, 'type', value)} value={content.type}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Content Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="text">Text</SelectItem>
-                        <SelectItem value="image">Image</SelectItem>
-                        <SelectItem value="gif">GIF</SelectItem>
-                        <SelectItem value="notebook">Notebook</SelectItem>
-                        <SelectItem value="code">Code</SelectItem>
-                        <SelectItem value="html">HTML</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={content.category}
-                        onCheckedChange={(checked) => handleContentChange(index, 'category', checked)}
-                      />
-                      <label>Is Category</label>
-                    </div>
-                    {content.type === 'code' && (
-                  <>
-                    <Input
-                      placeholder="Language"
-                      value={content.language || ''}
-                      onChange={(e) => handleContentChange(index, 'language', e.target.value)}
-                      className="mb-2"
-                    />
-                    <Textarea
-                      placeholder="Paste your code here"
-                      value={content.content || ''}
-                      onChange={(e) => handleContentChange(index, 'content', e.target.value)}
-                      className="font-mono"
-                      rows={10}
-                    />
-                  </>
-                )}
-                    {['html', 'notebook', 'image', 'gif'].includes(content.type) && (
-                      <div className="space-y-2">
-                        <RadioGroup
-                          value={content.fileType || 'link'}
-                          onValueChange={(value) => handleContentChange(index, 'fileType', value)}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="link" id={`link-${index}`} />
-                            <Label htmlFor={`link-${index}`}>Link</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="upload" id={`upload-${index}`} />
-                            <Label htmlFor={`upload-${index}`}>Upload</Label>
-                          </div>
-                        </RadioGroup>
-                        {content.fileType === 'link' ? (
-                          <div className="flex items-center space-x-2">
-                            <Link className="h-4 w-4" />
-                            <Input
-                              placeholder="File URL"
-                              value={content.content}
-                              onChange={(e) => handleContentChange(index, 'content', e.target.value)}
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <Upload className="h-4 w-4" />
-                            <Input
-                              type="file"
-                              accept={content.type === 'html' ? '.html' : content.type === 'notebook' ? '.ipynb' : 'image/*'}
-                              onChange={(e) => e.target.files && handleFileUpload(index, e.target.files[0])}
-                              disabled={isUploading}
-                            />
-                          </div>
-                        )}
-                        {isUploading && <p>Uploading...</p>}
-                        {content.content && <p>Current file: {content.content}</p>}
-                      </div>
-                    )}
-                    {['text'].includes(content.type) && (
-                      <Textarea
-                        placeholder="Content"
-                        value={content.content}
-                        onChange={(e) => handleContentChange(index, 'content', e.target.value)}
-                      />
-                    )}
+          {current && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Field label="Name (shown in the topic tree)">
+                <Input value={current.name} onChange={(e) => setCurrent({ ...current, name: e.target.value })} required />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Sort order">
+                  <Input type="number" value={current.order} onChange={(e) => setCurrent({ ...current, order: Number(e.target.value) || 0 })} />
+                </Field>
+                {current.type === 'file' && (
+                  <div className="flex items-end pb-2">
+                    <CheckboxField label="Feature on the home page" checked={current.featured} onChange={(v) => setCurrent({ ...current, featured: v })} />
                   </div>
-                ))}
-                <Button type="button" onClick={handleAddContent}>Add Content Section</Button>
-              </>
-            )}
-            <Button type="submit" disabled={isUploading}>
-              <Save className="mr-2 h-4 w-4" />
-              Save Item
-            </Button>
-          </form>
+                )}
+              </div>
+              {learning && (
+                <>
+                  <Field label="Title">
+                    <Input value={learning.title} onChange={(e) => setLearning({ title: e.target.value })} />
+                  </Field>
+                  <Field label="Keywords" hint="Comma-separated.">
+                    <ListInput value={learning.keywords} onChange={(keywords) => setLearning({ keywords })} />
+                  </Field>
+                  <Field label="Content">
+                    <ContentBlocksEditor blocks={learning.content} onChange={(content) => setLearning({ content })} showCategory />
+                  </Field>
+                </>
+              )}
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save
+              </Button>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
-      <ScrollArea className="h-[600px] w-full rounded-md border p-4">
-        {directories.map((item, index) => (
-          <DirectoryItem key={index} item={item} depth={0} />
-        ))}
-      </ScrollArea>
+      <div className="w-full rounded-md border p-4">
+        {loading ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : tree.length === 0 ? (
+          <p className="text-muted-foreground">Nothing here yet. Add a root folder to start.</p>
+        ) : (
+          tree.map((item) => (
+            <TreeRow
+              key={item.id}
+              item={item}
+              depth={0}
+              onRename={(it, name) => save({ ...draftFrom(it), name }, 'Renamed')}
+              onDelete={handleDelete}
+              onAdd={openAdd}
+              onEdit={(it) => setCurrent(draftFrom(it))}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }

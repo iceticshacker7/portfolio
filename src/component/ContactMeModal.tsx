@@ -2,30 +2,19 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Send, Loader, Code, Database, Brain } from 'lucide-react'
 import emailjs from "@emailjs/browser";
-import {
-  FaGithub,
-  FaKaggle,
-  FaLinkedin,
-  FaTwitter,
-  FaYoutube,
-} from "react-icons/fa";
+import { api } from '@/lib/api'
+import { useProfile } from '@/lib/profile'
+import { socialIconMap } from '@/lib/icons'
+
 interface ContactMeModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const socialLinks = [
-  { icon: FaGithub, href: "https://github.com/iceticshacker7", label: "GitHub" },
-  { icon: FaLinkedin, href: "https://www.linkedin.com/in/divyanshrai7", label: "LinkedIn" },
-  { icon: FaKaggle, href: "https://kaggle.com/divyanshrai7",label: "Kaggle" },
-  { icon: FaTwitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: FaYoutube, href: "https://youtube.com" , label: "YouTube"},
-];
-const expertise = [
-  { icon: Code, label: "Full-stack Development" },
-  { icon: Database, label: "Data Engineering" },
-  { icon: Brain, label: "Machine Learning" },
-]
+const expertiseIcons = [Code, Database, Brain]
+const emailjsConfigured = Boolean(
+  import.meta.env.VITE_SERVICE_ID && import.meta.env.VITE_TEMPLATE_ID_CONTACT_US && import.meta.env.VITE_PUBLIC_KEY,
+)
 
 export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps) {
   const [name, setName] = useState('')
@@ -33,6 +22,15 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [website, setWebsite] = useState('')
+  const { profile } = useProfile()
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen, onClose])
 
   useEffect(() => {
     if (submitStatus === 'success') {
@@ -47,16 +45,25 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    console.log(name, email, message)
-    try {
-      await emailjs.send(
-        import.meta.env.VITE_SERVICE_ID,
-        import.meta.env.VITE_TEMPLATE_ID_CONTACT_US,
-        {name, email, message},
-        import.meta.env.VITE_PUBLIC_KEY,
-      )
+    // The message is always saved to the database (visible under Admin > Messages);
+    // EmailJS additionally emails it when configured.
+    const results = await Promise.allSettled([
+      api.post('/contact', { name, email, message, website }),
+      emailjsConfigured
+        ? emailjs.send(
+            import.meta.env.VITE_SERVICE_ID,
+            import.meta.env.VITE_TEMPLATE_ID_CONTACT_US,
+            { name, email, message },
+            import.meta.env.VITE_PUBLIC_KEY,
+          )
+        : Promise.reject(new Error('EmailJS not configured')),
+    ])
+    if (results.some((r) => r.status === 'fulfilled')) {
       setSubmitStatus('success')
-    } catch (error) {
+      setName('')
+      setEmail('')
+      setMessage('')
+    } else {
       setSubmitStatus('error')
     }
     setIsSubmitting(false)
@@ -76,12 +83,15 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
             initial={{ scale: 0.9, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 50 }}
-            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl"
+            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[95vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-title"
           >
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+                <h2 id="contact-title" className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
                   Let's Connect
                 </h2>
                 <p className="text-gray-600 mt-2">
@@ -90,6 +100,7 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
               </div>
               <button
                 onClick={onClose}
+                aria-label="Close"
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <X size={24} />
@@ -97,38 +108,44 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
+              <div className="hidden md:block">
                 <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                  <h3 className="text-xl font-semibold mb-4">Divyansh Rai</h3>
+                  <h3 className="text-xl font-semibold mb-4">{profile.name}</h3>
                   <p className="text-gray-600 mb-4">
-                    System Engineer | ML Enthusiast | Full-stack Developer
+                    {profile.footerTagline}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {expertise.map((item, index) => (
+                    {profile.about.expertise.slice(0, 3).map((label, index) => {
+                      const Icon = expertiseIcons[index % expertiseIcons.length]
+                      return (
                       <motion.div
-                        key={index}
+                        key={label}
                         className="flex items-center bg-white rounded-full px-3 py-1 text-sm text-gray-700"
                         whileHover={{ scale: 1.05 }}
                       >
-                        <item.icon size={16} className="mr-2" />
-                        {item.label}
+                        <Icon size={16} className="mr-2" />
+                        {label}
                       </motion.div>
-                    ))}
+                      )
+                    })}
                   </div>
                   <div className="flex space-x-4">
-                    {socialLinks.map((link, index) => (
+                    {profile.socials.map(({ platform, url }) => {
+                      const link = { ...socialIconMap[platform], href: url }
+                      return (
                       <motion.a
-                        key={index}
+                        key={url}
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-gray-600 hover:text-blue-500 transition-colors"
                         whileHover={{ scale: 1.2, rotate: 5 }}
                       >
-                        <link.icon size={24} />
+                        <link.Icon size={24} />
                         <span className="sr-only">{link.label}</span>
                       </motion.a>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -149,6 +166,17 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
 
               <div>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Honeypot: hidden from people, filled in by spam bots. */}
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    className="hidden"
+                    aria-hidden="true"
+                  />
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Name
@@ -183,6 +211,7 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
                       id="message"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
+                      maxLength={5000}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
                       required
                     ></textarea>

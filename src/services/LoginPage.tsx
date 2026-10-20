@@ -1,93 +1,135 @@
-import  { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth'
-import { auth } from '../firebase' // Your Firebase config
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { LogIn, LogOut, Loader2 } from 'lucide-react'
+import { KeyRound, Loader2 } from 'lucide-react'
+import { api } from '@/lib/api'
+import { useAuth, type AdminUser } from '@/lib/auth'
 
-const googleProvider = new GoogleAuthProvider()
+interface AuthConfig {
+  googleClientId: string | null
+  passwordEnabled: boolean
+}
+
+interface GoogleIdApi {
+  initialize: (opts: { client_id: string; callback: (r: { credential: string }) => void }) => void
+  renderButton: (el: HTMLElement, opts: Record<string, unknown>) => void
+}
+declare global {
+  interface Window {
+    google?: { accounts: { id: GoogleIdApi } }
+  }
+}
+
+function loadGoogleScript(): Promise<void> {
+  if (window.google?.accounts?.id) return Promise.resolve()
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('Could not load Google sign-in'))
+    document.head.appendChild(script)
+  })
+}
 
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading, setUser } = useAuth()
+  const location = useLocation()
+  const [config, setConfig] = useState<AuthConfig | null>(null)
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const googleButton = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user)
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
+    api.get<AuthConfig>('/auth/config').then(setConfig).catch(() => setError('The API is not reachable. Check that the backend is running and MONGODB_URI is set.'))
   }, [])
 
-  const handleLogin = async () => {
-    try {
-      setError(null)
-      await signInWithPopup(auth, googleProvider)
-      navigate('/login')
-    } catch (error) {
-      console.error("Error during login:", error)
-      setError("Failed to log in. Please try again.")
-    }
-  }
+  useEffect(() => {
+    if (!config?.googleClientId || !googleButton.current || user) return
+    const el = googleButton.current
+    loadGoogleScript()
+      .then(() => {
+        window.google!.accounts.id.initialize({
+          client_id: config.googleClientId!,
+          callback: async ({ credential }) => {
+            setError(null)
+            try {
+              const res = await api.post<{ user: AdminUser }>('/auth/google', { credential })
+              setUser(res.user)
+            } catch (e) {
+              setError((e as Error).message)
+            }
+          },
+        })
+        window.google!.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 300, text: 'signin_with' })
+      })
+      .catch((e) => setError(e.message))
+  }, [config, user, setUser])
 
-  const handleLogout = async () => {
+  const handlePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
     try {
-      setError(null)
-      await signOut(auth)
-      navigate('/')
-    } catch (error) {
-      console.error("Error during logout:", error)
-      setError("Failed to log out. Please try again.")
+      const res = await api.post<{ user: AdminUser }>('/auth/password', { password })
+      setUser(res.user)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
 
+  if (user) {
+    const from = (location.state as { from?: string } | null)?.from
+    return <Navigate to={from?.startsWith('/admin') ? from : '/admin'} replace />
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-[350px]">
+    <div className="flex items-center justify-center min-h-[70vh] bg-gray-100 px-4">
+      <Card className="w-full max-w-[380px]">
         <CardHeader>
-          <CardTitle>Welcome</CardTitle>
-          <CardDescription>
-            {user ? `Logged in as ${user.displayName}` : 'Please sign in to continue'}
-          </CardDescription>
+          <CardTitle>Admin sign in</CardTitle>
+          <CardDescription>Only allow-listed accounts can manage the portfolio.</CardDescription>
         </CardHeader>
-        <CardContent>
-          {user ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">You're currently logged in.</p>
-             
-              <Button className="w-full" onClick={() => navigate('/project-management')}>
-                Go to Project Management
+        <CardContent className="space-y-6">
+          {!config && !error && <Loader2 className="h-6 w-6 animate-spin mx-auto" />}
+          {config?.googleClientId && <div ref={googleButton} className="flex justify-center min-h-[44px]" />}
+          {config?.passwordEnabled && (
+            <form onSubmit={handlePassword} className="space-y-3">
+              {config.googleClientId && <p className="text-center text-xs text-muted-foreground">or</p>}
+              <Input
+                type="password"
+                placeholder="Admin password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Button className="w-full" type="submit" disabled={submitting}>
+                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                Sign in with password
               </Button>
-              <Button className="w-full" onClick={() => navigate('/certificate-management')}>
-                Go to Certificate Management
-              </Button>
-              <Button className="w-full" onClick={() => navigate('/directory-management')}>
-                Go to Learning Directory Management
-              </Button>
-              <Button variant="outline" className="w-full" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </Button>
-            </div>
-          ) : (
-            <Button className="w-full" onClick={handleLogin}>
-              <LogIn className="mr-2 h-4 w-4" />
-              Sign in with Google
-            </Button>
+            </form>
           )}
-          {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
+          {config && !config.googleClientId && !config.passwordEnabled && (
+            <p className="text-sm text-muted-foreground">
+              No sign-in method is configured. Set <code>GOOGLE_CLIENT_ID</code> or <code>ADMIN_PASSWORD</code>, plus{' '}
+              <code>ADMIN_EMAILS</code>, in the server environment.
+            </p>
+          )}
+          {error && <p className="text-sm text-red-500">{error}</p>}
         </CardContent>
       </Card>
     </div>

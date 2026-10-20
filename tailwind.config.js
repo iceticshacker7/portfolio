@@ -8,7 +8,9 @@ export default {
   theme: {
   	extend: {
       fontFamily: {
-        mono: ['mono', 'sans-serif'], // Add mono as a font option
+        // The original 'mono' webfont was never committed, so the site always rendered in the
+        // sans-serif fallback; keep that look explicitly.
+        mono: ['ui-sans-serif', 'system-ui', 'sans-serif'],
       },
   		borderRadius: {
   			lg: 'var(--radius)',

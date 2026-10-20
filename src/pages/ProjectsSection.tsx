@@ -1,68 +1,59 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Link } from 'react-router-dom'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
 import { ExternalLink, Github } from 'lucide-react'
+import type { Project } from '@shared/schemas'
+import { useApi } from '@/lib/api'
+import { uniqueSorted } from '@/lib/content'
 
-interface Project {
-  id: string
-  title: string
-  description: string
-  tags: string[]
-  subtags: string[]
-  image: string
-  liveUrl: string
-  githubUrl: string
-}
+const ANY = 'Any topic'
 
-const allTags = ['Any topic', 'Machine Learning', 'Data Visualization', 'Full-Stack_Development', 'Computer Vision', 'Python', 'Data Analysis', 'R']
-
-const subtags = {
-  'Machine Learning': ['Python', 'Scikit-learn', 'TensorFlow', 'PyTorch', 'Neural Networks', 'SVM', 'Random Forest'],
-  'Data Visualization': ['Matplotlib', 'D3.js', 'Plotly', 'Seaborn'],
-  'Full-Stack_Development': ['React', 'Node.js',"GitHub"],
-  'Computer Vision': ['OpenCV', 'TensorFlow', 'PyTorch'],
-  'Python': ['Numpy', 'Pandas', 'Matplotlib', 'Scikit-learn'],
-  'Data Analysis': ['R', 'Python', 'SQL', 'Tableau'],
-  'R': ['ggplot2', 'dplyr', 'tidyr', 'caret']
-}
-
+// Only the image and title are links: nesting the external <a> links inside a
+// card-wide <Link> was invalid HTML.
 const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
   return (
-    <Link to={`/projects/${project.id}`}>
-      <Card className="w-full shadow-lg bg-white border-0 overflow-hidden cursor-pointer transition-transform transform hover:scale-105 flex flex-col h-full">
-        <div className="relative overflow-hidden rounded-md">
+    <Card className="w-full shadow-lg bg-white border-0 overflow-hidden transition-transform transform hover:scale-105 flex flex-col h-full">
+      <Link to={`/projects/${project.id}`} className="relative overflow-hidden rounded-md" tabIndex={-1}>
+        {project.image ? (
           <img
             src={project.image}
             alt={`${project.title} Banner`}
+            loading="lazy"
             className="w-full h-32 object-cover"
           />
+        ) : (
+          <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-teal-100" />
+        )}
+      </Link>
+      <CardContent className="p-3 flex-grow">
+        <Link to={`/projects/${project.id}`}>
+          <h3 className="text-lg font-semibold mt-1 hover:underline">{project.title}</h3>
+        </Link>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {project.tags.map((tech) => (
+            <span key={tech} className="text-xs px-2 p-1 rounded-xl bg-blue-100">
+              {tech}
+            </span>
+          ))}
         </div>
-        <CardContent className="p-3 flex-grow">
-          <h3 className="text-lg font-semibold mt-1 hover:underline cursor-pointer">{project.title}</h3>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {project.tags.map((tech, index) => (
-              <span key={index} className="text-xs px-2 p-1 rounded-xl bg-blue-100">
-                {tech}
-              </span>
-            ))}
-          </div>
-          <p className="text-sm text-gray-600 line-clamp-4">
-            {project.description}
-          </p>
-        </CardContent>
-        <CardFooter className="p-4 pt-0 flex justify-between">
-          <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+        <p className="text-sm text-gray-600 line-clamp-4">
+          {project.description}
+        </p>
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-between">
+        {project.liveUrl ? (
+          <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" aria-label="Live demo" className="text-blue-600 hover:text-blue-800">
             <ExternalLink size={20} />
           </a>
-          <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+        ) : <span />}
+        {project.githubUrl && (
+          <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" className="text-blue-600 hover:text-blue-800">
             <Github size={20} />
           </a>
-        </CardFooter>
-      </Card>
-    </Link>
+        )}
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -75,41 +66,24 @@ const ShimmerCard: React.FC = () => {
 }
 
 export default function ProjectsSection() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTag, setActiveTag] = useState('Machine Learning')
+  const { data: projects, loading, error } = useApi<Project[]>('/projects', [])
+  const [activeTag, setActiveTag] = useState(ANY)
   const [activeSubtag, setActiveSubtag] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'projects'))
-        const projectsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Project[]
-        setProjects(projectsData)
-      } catch (error) {
-        console.error('Error fetching projects:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchProjects()
-  }, [])
+  const allTags = [ANY, ...uniqueSorted(projects.flatMap((p) => p.tags))]
+  const subtagsForTag = activeTag === ANY ? [] : uniqueSorted(projects.filter((p) => p.tags.includes(activeTag)).flatMap((p) => p.subtags))
 
   const filteredProjects = activeSubtag
     ? projects.filter(project => project.subtags.includes(activeSubtag))
-    : activeTag === 'Any topic'
+    : activeTag === ANY
       ? projects
       : projects.filter(project => project.tags.includes(activeTag))
 
   return (
-    <div className="py-12 px-8 bg-gradient-to-br from-white to-gray-50 font-mono">
+    <div className="py-12 px-4 sm:px-8 bg-gradient-to-br from-white to-gray-50 font-mono">
       <div className="max-w-6xl mx-auto">
         <motion.h2 
-          className="text-4xl font-bold mb-2 text-center"
+          className="text-3xl sm:text-4xl font-bold mb-2 text-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -150,14 +124,14 @@ export default function ProjectsSection() {
           ))}
         </motion.div>
 
-        {activeTag !== 'Any topic' && subtags[activeTag as keyof typeof subtags] && (
+        {subtagsForTag.length > 0 && (
           <motion.div 
             className="flex flex-wrap justify-center gap-2 mb-8"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {subtags[activeTag as keyof typeof subtags].map((subtag) => (
+            {subtagsForTag.map((subtag) => (
               <motion.button
                 key={subtag}
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -165,7 +139,7 @@ export default function ProjectsSection() {
                     ? 'bg-purple-600 text-white' 
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
-                onClick={() => setActiveSubtag(subtag)}
+                onClick={() => setActiveSubtag(activeSubtag === subtag ? null : subtag)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -209,6 +183,11 @@ export default function ProjectsSection() {
             )}
           </AnimatePresence>
         </motion.div>
+        {!loading && filteredProjects.length === 0 && (
+          <p className="text-center text-gray-500 mt-8">
+            {error ? 'Could not load projects right now. Please try again later.' : 'No projects in this category yet.'}
+          </p>
+        )}
       </div>
     </div>
   )
