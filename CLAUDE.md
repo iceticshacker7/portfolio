@@ -26,7 +26,7 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 
 ## Status / open items
 - Atlas: project "Project 0", free cluster `portfolio` (AWS US_EAST_1), database `portfolio`. Firestore data (5 projects, 9 certificates, 18 learning items) and seed content were imported on 2026-10-21 via the MongoDB Atlas connector.
-- Vercel project `portfolio` (team dev-rais-projects, domain divyanshrai.co) has `SESSION_SECRET` and `MONGODB_DB`. Still needs `MONGODB_URI` (an Atlas DB user plus network access `0.0.0.0/0`), `ADMIN_EMAILS`, and `GOOGLE_CLIENT_ID` and/or `ADMIN_PASSWORD`.
-- Firebase Storage is unreachable (402: Spark plan no longer serves Storage). The 21 lost files (certificate images, screenshots, 3 notebook HTMLs) are listed in `scripts/firebase-storage-missing.json` with the record each belonged to. Re-add them via the admin panel, or commit them under `public/media/` and point the records at `/media/<file>`.
+- Vercel project `portfolio` (team dev-rais-projects, domain divyanshrai.co) has `MONGODB_URI`, `MONGODB_DB` and `SESSION_SECRET`. Still needs `ADMIN_EMAILS`, and `GOOGLE_CLIENT_ID` and/or `ADMIN_PASSWORD`, before /admin works.
+- The 21 Firebase Storage files were recovered (Oct 2026, after a temporary Blaze upgrade) into `public/media/` (images converted to WebP) and the records re-linked to `/media/...`. `scripts/firebase-storage-missing.json` records the original paths. New uploads from the admin panel go to GridFS.
 - Home-page "Top Contributions" is empty until entries are added in Admin → Contributions (the old placeholder ones were fake).
 - The owner keeps agent notes and memories in a separate local project ("LKH"), which isn't on GitHub. Content from it can be added through the admin panel or the seed data.
