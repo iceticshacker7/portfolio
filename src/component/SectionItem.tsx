@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-
 interface SectionItemProps {
   title: string
   description: string
@@ -7,52 +5,19 @@ interface SectionItemProps {
   dateRange: string
 }
 
+/** One entry on the experience timeline: a dot on the rail plus a card. */
 export default function SectionItem({ title, description, institution, dateRange }: SectionItemProps) {
   return (
-    <motion.div 
-      className="mb-8 relative"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div 
-        className="absolute -left-10 mt-1.5 h-4 w-4 rounded-full bg-black"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 15 }}
-      />
-      <motion.h3 
-        className="text-xl font-semibold mb-1"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
-      >
-        {title}
-      </motion.h3>
-      <motion.p 
-        className="text-gray-600 mb-1"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-      >
-        {description}
-      </motion.p>
-      <motion.p 
-        className="text-sm text-gray-500 mb-1"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-      >
-        {institution}
-      </motion.p>
-      <motion.p 
-        className="text-sm text-gray-400"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        {dateRange}
-      </motion.p>
-    </motion.div>
+    <div className="relative">
+      <span className="absolute -left-[41px] top-5 h-4 w-4 rounded-full border-4 border-background bg-gradient-to-br from-blue-500 to-teal-400" aria-hidden="true" />
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground leading-snug">{title}</h3>
+          {dateRange && <span className="shrink-0 text-xs font-medium text-muted-foreground sm:pt-1">{dateRange}</span>}
+        </div>
+        {institution && <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400">{institution}</p>}
+        {description && <p className="mt-2 text-sm text-muted-foreground">{description}</p>}
+      </div>
+    </div>
   )
 }

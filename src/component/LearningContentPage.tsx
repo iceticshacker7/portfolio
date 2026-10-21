@@ -10,7 +10,7 @@ const LearningContent: React.FC<{ item: LearningItem; fallbackTitle: string }> =
   return (
     <div className="space-y-8">
       <motion.h2
-        className="text-3xl sm:text-4xl font-bold text-gray-800"
+        className="text-3xl sm:text-4xl font-bold text-foreground"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -26,7 +26,7 @@ const LearningContent: React.FC<{ item: LearningItem; fallbackTitle: string }> =
         {item.keywords.map((keyword) => (
           <span
             key={keyword}
-            className="inline-block bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm font-semibold"
+            className="inline-block bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-200 rounded-full px-3 py-1 text-sm font-semibold"
           >
             {keyword}
           </span>
@@ -76,13 +76,13 @@ export default function LearningContentPage() {
           <ol className="inline-flex items-center space-x-1 md:space-x-3">
             {breadcrumbs.map((crumb, index) => (
               <li key={crumb.path} className="inline-flex items-center whitespace-nowrap">
-                {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400" />}
+                {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground/70" />}
                 <Link
                   to={crumb.path}
                   className={`inline-flex items-center text-sm font-medium ${
                     index === breadcrumbs.length - 1
-                      ? 'text-gray-500 cursor-default'
-                      : 'text-blue-600 hover:text-blue-800'
+                      ? 'text-muted-foreground cursor-default'
+                      : 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300'
                   }`}
                 >
                   {crumb.name}
@@ -127,7 +127,7 @@ export default function LearningContentPage() {
               exit={{ opacity: 0 }}
               className="w-full p-6 text-center"
             >
-              <p className="text-gray-500">Learning item not found.</p>
+              <p className="text-muted-foreground">Learning item not found.</p>
             </motion.div>
           )}
         </AnimatePresence>

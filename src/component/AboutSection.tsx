@@ -1,98 +1,80 @@
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
-import { ArrowRight, Code, Database, Brain, Users, Zap } from "lucide-react"
+import { ArrowRight, Code, Database, Brain, Users, Zap, Mail } from "lucide-react"
 import { useProfile } from "@/lib/profile"
 
 const expertiseIcons = [Code, Database, Brain, Users, Zap]
+
+const reveal = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.45 },
+}
 
 export default function AboutSection({ contact }: { contact: () => void }) {
   const { about, resumeUrl } = useProfile().profile
 
   return (
-    <section className="w-full max-w-6xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center mb-12"
-      >
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">About Me</h2>
-        <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-teal-400 mx-auto"></div>
-      </motion.div>
+    <section id="about" className="w-full py-16 sm:py-20 bg-muted/40 border-t border-border/60">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div {...reveal} className="mb-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">About me</p>
+          <h2 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{about.title}</h2>
+        </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <h3 className="text-2xl font-semibold text-gray-900 mb-4">{about.title}</h3>
-          {about.paragraphs.map((p, i) => (
-            <p key={i} className="text-gray-600 mb-6">
-              {p}
-            </p>
-          ))}
-          <motion.div whileHover={{ x: 10 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-10 items-start">
+          <motion.div {...reveal} className="space-y-5 text-base leading-relaxed text-muted-foreground">
+            {about.paragraphs.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
             {resumeUrl ? (
-              <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-600 font-semibold group">
-                <span className="mr-2">View my full resume</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400">
+                View my full resume
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </a>
             ) : (
-              <Link to="/resume" className="inline-flex items-center text-blue-600 font-semibold group">
-                <span className="mr-2">View my skills</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Link to="/resume" className="group inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400">
+                View all my skills
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             )}
           </motion.div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white p-8 rounded-lg shadow-lg"
-        >
-          <h3 className="text-2xl font-semibold text-gray-900 mb-6">My Expertise</h3>
-          <ul className="space-y-4">
-            {about.expertise.map((text, index) => {
-              const Icon = expertiseIcons[index % expertiseIcons.length]
-              return (
-              <motion.li
-                key={text}
-                className="flex items-center space-x-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
-              >
-                <div className="flex-shrink-0">
-                  <Icon className="w-6 h-6 text-blue-500" />
-                </div>
-                <span className="text-gray-700">{text}</span>
-              </motion.li>
-              )
-            })}
-          </ul>
-        </motion.div>
+          <motion.div {...reveal} className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground mb-5">What I bring</h3>
+            <ul className="space-y-4">
+              {about.expertise.map((text, index) => {
+                const Icon = expertiseIcons[index % expertiseIcons.length]
+                return (
+                  <li key={text} className="flex items-center gap-3">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="text-foreground/90">{text}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          </motion.div>
+        </div>
+
+        {(about.ctaTitle || about.ctaText) && (
+          <motion.div
+            {...reveal}
+            className="mt-14 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 px-6 py-10 sm:px-12 text-center text-white shadow-lg"
+          >
+            {about.ctaTitle && <h3 className="text-2xl font-bold">{about.ctaTitle}</h3>}
+            {about.ctaText && <p className="mt-3 max-w-2xl mx-auto text-white/90">{about.ctaText}</p>}
+            <button
+              onClick={contact}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-blue-700 shadow hover:bg-blue-50"
+            >
+              <Mail className="h-4 w-4" /> Get in touch
+            </button>
+          </motion.div>
+        )}
       </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="mt-12 text-center"
-      >
-        {about.ctaTitle && <h3 className="text-2xl font-semibold text-gray-900 mb-4">{about.ctaTitle}</h3>}
-        {about.ctaText && <p className="text-gray-600 mb-6">{about.ctaText}</p>}
-        <motion.button
-        onClick={contact}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-teal-400 text-white font-semibold rounded-md shadow-md hover:from-blue-600 hover:to-teal-500 transition-all duration-300"
-        >
-          Get in Touch
-        </motion.button>
-      </motion.div>
     </section>
   )
 }

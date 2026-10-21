@@ -32,7 +32,7 @@ export default function AdminLayout() {
               key={s.to}
               to={s.to}
               className={({ isActive }) =>
-                `whitespace-nowrap rounded-md px-3 py-2 text-sm ${isActive ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`
+                `whitespace-nowrap rounded-md px-3 py-2 text-sm ${isActive ? 'bg-primary text-primary-foreground' : 'text-foreground/85 hover:bg-muted'}`
               }
             >
               {s.label}

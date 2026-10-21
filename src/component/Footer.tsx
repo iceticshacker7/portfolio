@@ -1,68 +1,68 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useProfile } from '@/lib/profile'
 import { socialIconMap } from '@/lib/icons'
+import { navItems } from '@/lib/nav'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
   const { profile } = useProfile()
 
   return (
-    <motion.footer 
-      className="w-full bg-white from-gray-50 to-white border-t border-gray-200 font-mono py-12"
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <motion.div 
-            className="mb-8 md:mb-0 text-center md:text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">{profile.name}</h2>
-            <p className="text-sm text-gray-600 mt-2">{profile.footerTagline}</p>
-          </motion.div>
-          <motion.div 
-            className="flex space-x-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            {profile.socials.map(({ platform, url: href }) => {
-              const { Icon, label } = socialIconMap[platform]
-              return (
-              <motion.a
-                key={href}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="text-gray-600 hover:text-blue-500 transition-colors"
-                whileHover={{ scale: 1.2, rotate: 5 }}
-              >
-                <Icon className="w-6 h-6" />
-              </motion.a>
-              )
-            })}
-          </motion.div>
-        </div>
-        <motion.div 
-          className="mt-12 text-center text-sm text-gray-600"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <p>&copy; {currentYear} {profile.name}. All rights reserved.</p>
-          <p className="mt-2">
-            <Link to="/login" className="text-gray-400 hover:text-blue-500 transition-colors">
-              Admin
+    <footer className="w-full border-t border-border bg-muted/30">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
+          <div>
+            <Link to="/" className="inline-flex items-center gap-3">
+              <img src={profile.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+              <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+                {profile.name}
+              </span>
             </Link>
-          </p>
-        </motion.div>
+            <p className="mt-3 text-sm text-muted-foreground max-w-sm">{profile.footerTagline}</p>
+          </div>
+
+          <nav aria-label="Footer">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">Explore</h2>
+            <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              {navItems.map((item) => (
+                <li key={item.href}>
+                  <Link to={item.href} className="text-muted-foreground hover:text-foreground transition-colors">
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">Connect</h2>
+            <div className="mt-3 flex flex-wrap gap-3">
+              {profile.socials.map(({ platform, url: href }) => {
+                const { Icon, label } = socialIconMap[platform]
+                return (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+          <p>&copy; {currentYear} {profile.name}. All rights reserved.</p>
+          <Link to="/login" className="text-muted-foreground/70 hover:text-foreground transition-colors">
+            Admin
+          </Link>
+        </div>
       </div>
-    </motion.footer>
+    </footer>
   )
 }

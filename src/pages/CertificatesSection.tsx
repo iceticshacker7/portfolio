@@ -1,259 +1,134 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Award, Calendar, CheckCircle, MapPin } from "lucide-react";
 import type { Certificate } from "@shared/schemas";
-import { useApi } from "@/lib/api";
-import { uniqueSorted } from "@/lib/content";
-import { X, CheckCircle, Maximize2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useApi } from "@/lib/api";
+import { prettyTag, uniqueSorted } from "@/lib/content";
+import PageHeader, { FilterPills, PageShell } from "@/component/PageHeader";
 
-const ANY = "Any topic";
+const ANY = "All";
 
-const ShimmerCard = () => (
-  <div className="w-full h-64 bg-gray-200 animate-pulse rounded-lg"></div>
-);
+const formatDate = (d: string) => {
+  if (!d) return "";
+  const date = new Date(d);
+  return Number.isNaN(date.getTime()) ? d : date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+};
 
-const CertificateCard: React.FC<{
-  certificate: Certificate;
-  onClick: () => void;
-}> = ({ certificate, onClick }) => {
+function CertificateCard({ certificate, onClick }: { certificate: Certificate; onClick: () => void }) {
   return (
-    <Card
-      className="w-full   shadow-lg overflow-hidden cursor-pointer transition-transform transform hover:scale-105 flex flex-col h-full"
+    <button
+      type="button"
       onClick={onClick}
+      className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-500/30"
     >
-      <div className="relative overflow-hidden">
+      {/* Certificates are documents: show the whole page on a light mat instead of cropping it. */}
+      <div className="aspect-[4/3] w-full bg-white p-3 border-b border-border">
         {certificate.image ? (
-          <img
-            src={certificate.image}
-            alt={`${certificate.title} Banner`}
-            loading="lazy"
-            className="w-full h-32 object-cover"
-          />
+          <img src={certificate.image} alt="" loading="lazy" className="h-full w-full object-contain" />
         ) : (
-          <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-purple-100" />
+          <div className="flex h-full items-center justify-center text-blue-500">
+            <Award className="h-12 w-12" />
+          </div>
         )}
       </div>
-      <CardContent className="p-3 flex-grow">
-        <h3 className="text-lg font-semibold mt-1 hover:underline cursor-pointer">
-          {certificate.title}
-        </h3>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {certificate.tags.map((tech, index) => (
-            <span key={index} className="text-xs text-blue-600">
-              {tech}
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {certificate.tags.map((t) => (
+            <span key={t} className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
+              {prettyTag(t)}
             </span>
           ))}
         </div>
-        <p className="text-sm text-gray-600 line-clamp-4">
-          {certificate.description}
+        <h2 className="text-base font-semibold leading-snug text-foreground line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+          {certificate.title}
+        </h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {certificate.instituteName}
+          {certificate.date && ` · ${formatDate(certificate.date)}`}
         </p>
-      </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <div className="flex items-center">
-          <span className="text-sm font-medium">
-            {certificate.instituteName}
-          </span>
-        </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </button>
   );
-};
-
-const CertificateDetail: React.FC<{
-  certificate: Certificate;
-  onClose: () => void;
-}> = ({ certificate, onClose }) => {
-  const [isImageExpanded, setIsImageExpanded] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gradient-to-r from-blue-100 to-purple-100 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">{certificate.title}</h2>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          <div className="relative group">
-            {certificate.image && <img
-              src={certificate.image}
-              alt={certificate.title}
-              className="w-full h-48 object-contain bg-gray-50 rounded-lg mb-4"
-            />}
-            <button
-              onClick={() => setIsImageExpanded(true)}
-              aria-label="Expand image"
-              className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full sm:opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-            >
-              <Maximize2 size={20} />
-            </button>
-          </div>
-          <p className="text-gray-600 mb-4">{certificate.description}</p>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {certificate.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          {certificate.date && <p className="text-sm text-gray-600 mb-2">Date: {certificate.date}</p>}
-          <p className="text-sm text-gray-600 mb-2">
-            Institute: {certificate.instituteName}
-          </p>
-          {certificate.location && <p className="text-sm text-gray-600 mb-4">
-            Location: {certificate.location}
-          </p>}
-          {certificate.credentialUrl && <a
-            href={certificate.credentialUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
-          >
-            <CheckCircle className="w-5 h-5 mr-2" />
-            <span>Verify Certificate</span>
-          </a>}
-        </div>
-      </motion.div>
-      <Dialog open={isImageExpanded} onOpenChange={setIsImageExpanded}>
-        <DialogContent className="max-w-4xl w-full p-0">
-          <DialogTitle className="sr-only">{certificate.title}</DialogTitle>
-          <img
-            src={certificate.image}
-            alt={certificate.title}
-            className="w-full h-auto object-contain"
-          />
-        </DialogContent>
-      </Dialog>
-    </motion.div>
-  );
-};
+}
 
 export default function CertificatesSection() {
   const { data: certificates, loading, error } = useApi<Certificate[]>("/certificates", []);
   const [activeTag, setActiveTag] = useState(ANY);
-  const [selectedCertificate, setSelectedCertificate] =
-    useState<Certificate | null>(null);
+  const [selected, setSelected] = useState<Certificate | null>(null);
   const allTags = [ANY, ...uniqueSorted(certificates.flatMap((c) => c.tags))];
-
-  const filteredCertificates =
-    activeTag === ANY
-      ? certificates
-      : certificates.filter((certificate) =>
-          certificate.tags.includes(activeTag)
-        );
+  const filtered = activeTag === ANY ? certificates : certificates.filter((c) => c.tags.includes(activeTag));
 
   return (
-    <div className="py-12 px-4 sm:px-8 bg-gradient-to-br from-white to-gray-50 font-mono">
-      <div className="max-w-6xl mx-auto">
-        <motion.h2
-          className="text-3xl sm:text-4xl font-bold mb-2 text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          Explore my Certificates
-        </motion.h2>
-        <motion.p 
-          className="text-gray-600 mb-8 text-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          Explore my collection of certificates and certifications, showcasing my expertise in various domains.
-        </motion.p>
-        <motion.div
-          className="flex flex-wrap justify-center gap-2 mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {allTags.map((tag) => (
-            <motion.button
-              key={tag}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                activeTag === tag
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
-              onClick={() => setActiveTag(tag)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {tag}
-            </motion.button>
-          ))}
-        </motion.div>
+    <PageShell>
+      <PageHeader eyebrow="Credentials" title="Certificates" subtitle="Courses and certifications I've completed, each with a link to verify it." />
 
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <AnimatePresence>
-            {loading
-              ? Array.from({ length: 6 }).map((_, index) => (
-                  <motion.div
-                    key={`shimmer-${index}`}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ShimmerCard />
-                  </motion.div>
-                ))
-              : filteredCertificates.map((certificate) => (
-                  <motion.div
-                    key={certificate.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <CertificateCard
-                      certificate={certificate}
-                      onClick={() => setSelectedCertificate(certificate)}
-                    />
-                  </motion.div>
-                ))}
-          </AnimatePresence>
-        </motion.div>
-        {!loading && filteredCertificates.length === 0 && (
-          <p className="text-center text-gray-500 mt-8">
-            {error ? "Could not load certificates right now. Please try again later." : "No certificates in this category yet."}
-          </p>
-        )}
+      <div className="mb-10">
+        <FilterPills options={allTags} active={activeTag} onChange={setActiveTag} format={prettyTag} />
       </div>
-      <AnimatePresence>
-        {selectedCertificate && (
-          <CertificateDetail
-            certificate={selectedCertificate}
-            onClose={() => setSelectedCertificate(null)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatePresence mode="popLayout">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <div key={`shimmer-${i}`} className="h-80 rounded-2xl bg-muted animate-pulse" />)
+            : filtered.map((certificate) => (
+                <motion.div
+                  key={certificate.id}
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <CertificateCard certificate={certificate} onClick={() => setSelected(certificate)} />
+                </motion.div>
+              ))}
+        </AnimatePresence>
+      </div>
+      {!loading && filtered.length === 0 && (
+        <p className="text-center text-muted-foreground mt-8">
+          {error ? "Could not load certificates right now. Please try again later." : "No certificates in this category yet."}
+        </p>
+      )}
+
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="max-w-4xl w-[calc(100%-2rem)] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+          {selected && (
+            <>
+              <DialogTitle className="pr-8 text-lg sm:text-xl leading-snug">{selected.title}</DialogTitle>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{selected.instituteName}</span>
+                {selected.date && (
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" /> {formatDate(selected.date)}
+                  </span>
+                )}
+                {selected.location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" /> {selected.location}
+                  </span>
+                )}
+              </div>
+              {selected.image && (
+                <a href={selected.image} target="_blank" rel="noopener noreferrer" className="block rounded-lg bg-white p-2 border border-border" title="Open full size">
+                  <img src={selected.image} alt={selected.title} className="w-full max-h-[60vh] object-contain" />
+                </a>
+              )}
+              {selected.description && <p className="text-sm leading-relaxed text-muted-foreground">{selected.description}</p>}
+              {selected.credentialUrl && (
+                <a
+                  href={selected.credentialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                >
+                  <CheckCircle className="h-4 w-4" /> Verify credential
+                </a>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </PageShell>
   );
 }

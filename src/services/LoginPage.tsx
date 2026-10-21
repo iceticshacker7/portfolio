@@ -97,7 +97,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[70vh] bg-gray-100 px-4">
+    <div className="flex items-center justify-center min-h-[70vh] bg-muted px-4">
       <Card className="w-full max-w-[380px]">
         <CardHeader>
           <CardTitle>Admin sign in</CardTitle>

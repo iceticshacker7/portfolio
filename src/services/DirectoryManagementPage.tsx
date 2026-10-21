@@ -38,7 +38,7 @@ const TreeRow: React.FC<{
 
   return (
     <div style={{ marginLeft: depth ? 20 : 0 }}>
-      <div className="flex flex-wrap items-center gap-1 py-1 border-b border-gray-100">
+      <div className="flex flex-wrap items-center gap-1 py-1 border-b border-border">
         {item.type === 'folder' ? (
           <Button variant="ghost" className="h-8 w-8 p-0" onClick={() => setIsOpen(!isOpen)} aria-label={isOpen ? 'Collapse' : 'Expand'}>
             {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -46,7 +46,7 @@ const TreeRow: React.FC<{
         ) : (
           <span className="w-8" />
         )}
-        {item.type === 'folder' ? <Folder className="h-4 w-4 text-blue-500" /> : <File className="h-4 w-4 text-muted-foreground" />}
+        {item.type === 'folder' ? <Folder className="h-4 w-4 text-blue-500 dark:text-blue-400" /> : <File className="h-4 w-4 text-muted-foreground" />}
         {renaming ? (
           <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-48" autoFocus />
         ) : (

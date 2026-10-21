@@ -1,149 +1,91 @@
-import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import ContactMeModal from "./ContactMeModal";
 import { useProfile } from "@/lib/profile";
+import { ThemeToggle } from "@/lib/theme";
+import { navItems } from "@/lib/nav";
 
-const navItems = [
-  { name: "Blogs", href: "/blogs" },
-  { name: "Projects", href: "/projects" },
-  { name: "Resume", href: "/resume" },
-  { name: "Learnings", href: "/learnings" },
-  { name: "Experience", href: "/experience" },
-  { name: "Certificates", href: "/certificates" },
-];
+
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+    isActive ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+  }`;
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const { profile } = useProfile();
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    }
+  const location = useLocation();
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => setIsMenuOpen(false), [location.pathname]);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b font-mono shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex justify-start lg:w-0 lg:flex-1">
-            <Link to="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
-                {profile.name || 'Portfolio'}
-              </span>
-            </Link>
-          </div>
-          <div className="flex items-center">
-            <div className="hidden md:flex relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                aria-expanded={isDropdownOpen}
-                aria-haspopup="menu"
-                className="text-gray-500 hover:text-gray-900 flex items-center space-x-1 focus:outline-none"
-              >
-                <span>Sections</span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    isDropdownOpen ? "transform rotate-180" : ""
-                  }`}
-                />
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                  <div
-                    className="py-1"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="options-menu"
-                  >
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                        role="menuitem"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="hidden md:ml-6 md:flex">
-              <button
-                onClick={() => setIsContactModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Contact Me
-              </button>
-            </div>
-            <div className="md:hidden">
-              <button
-                type="button"
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <span className="sr-only">Open menu</span>
-                {isMenuOpen ? (
-                  <X className="h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <Menu className="h-6 w-6" aria-hidden="true" />
-                )}
-              </button>
-            </div>
+        <div className="flex h-16 items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label={`${profile.name}, home`}>
+            <img src={profile.avatar} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-blue-500/30" />
+            <span className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+              {profile.name || "Portfolio"}
+            </span>
+          </Link>
+
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
+            {navItems.map((item) => (
+              <NavLink key={item.href} to={item.href} className={linkClass}>
+                {item.name}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setIsContactModalOpen(true)}
+              className="hidden sm:inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Contact Me
+            </button>
+            <button
+              type="button"
+              className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              <span className="sr-only">{isMenuOpen ? "Close menu" : "Open menu"}</span>
+              {isMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div
-        className={`${
-          isMenuOpen ? "block" : "hidden"
-        } md:hidden absolute top-full left-0 w-full bg-white shadow-lg`}
-      >
-        <div className="pt-2 pb-3 px-2 space-y-1 sm:px-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-              onClick={() => setIsMenuOpen(false)}
+      {isMenuOpen && (
+        <div id="mobile-menu" className="lg:hidden border-t border-border bg-background">
+          <nav className="max-w-6xl mx-auto px-4 py-3 grid gap-1" aria-label="Mobile">
+            {navItems.map((item) => (
+              <NavLink key={item.href} to={item.href} className={linkClass}>
+                {item.name}
+              </NavLink>
+            ))}
+            <button
+              type="button"
+              className="mt-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsContactModalOpen(true);
+              }}
             >
-              {item.name}
-            </Link>
-          ))}
-          <button
-            type="button"
-            className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500"
-            onClick={() => {
-              setIsMenuOpen(false);
-              setIsContactModalOpen(true);
-            }}
-          >
-            Contact Me
-          </button>
+              Contact Me
+            </button>
+          </nav>
         </div>
-      </div>
+      )}
+
       {/* Rendered once, outside the desktop-only block, so the mobile button can open it too. */}
-      <ContactMeModal
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-      />
+      <ContactMeModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
     </header>
   );
 }

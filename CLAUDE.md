@@ -18,6 +18,8 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 - Document `_id`s are strings (Firestore ids were preserved); the API exposes them as `id`.
 - Admin writes go through `src/lib/api.ts` (sends `X-Requested-With: portfolio`, which the server requires). Wrap actions in `withToast` from `src/lib/notify.ts`.
 - Small collections (skills, experience, achievements, contributions) share the config-driven editor in `src/services/SimpleCollectionPages.tsx`.
+- Styling: use theme tokens (`bg-card`, `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`) instead of fixed grays so light/dark mode both work; accent colors need a `dark:` variant. Theme state lives in `src/lib/theme.tsx`; `public/theme-init.js` applies it before first paint.
+- Top-level pages use `PageShell` + `PageHeader` (and `FilterPills`) from `src/component/PageHeader.tsx`; home sections use the local `Section` in `ProfileCard.tsx`. Show tags through `prettyTag()`.
 - Content blocks (project sections, learning pages) render through `src/component/ContentBlockView.tsx`. Don't add `dangerouslySetInnerHTML`; HTML goes in sandboxed iframes.
 - Vercel: keep the API as one function. `vercel.json` rewrites `/api/(.*)` → `/api`, because a `[...path]` file only matches one segment outside Next.js.
 

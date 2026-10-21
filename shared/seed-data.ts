@@ -8,7 +8,7 @@ export const seedProfile: Profile = {
   name: "Divyansh Rai",
   initials: "DR",
   avatar: "",
-  headline: "ML Graduate | System Engineer @TCS",
+  headline: "AI/ML Graduate | Systems Engineer @TCS",
   focusAreas: [
     "Machine Learning Algorithms",
     "Deep Learning Frameworks",
@@ -17,7 +17,7 @@ export const seedProfile: Profile = {
     "Natural Language Processing",
   ],
   keySkills: "Tensorflow, Pytorch, Scikit-Learn, Langchain, OpenCV, NLTK",
-  footerTagline: "System Engineer | ML Graduate",
+  footerTagline: "Systems Engineer @TCS | AI/ML Graduate",
   resumeUrl: "",
   socials: [
     { platform: "github", url: "https://github.com/iceticshacker7" },

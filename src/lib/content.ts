@@ -29,3 +29,8 @@ export function isUrl(value: string) {
 export function uniqueSorted(values: string[]) {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
+
+/** "Full-Stack_Development" → "Full Stack Development" for display; filters keep the raw value. */
+export function prettyTag(tag: string) {
+  return tag.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+}

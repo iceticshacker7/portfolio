@@ -7,6 +7,7 @@ import ProfileCard from "./component/ProfileCard";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, RequireAdmin } from "./lib/auth";
 import { ProfileProvider } from "./lib/profile";
+import { ThemeProvider } from "./lib/theme";
 
 // Route-level code splitting: the home page loads first, everything else on demand.
 const ExperienceSection = lazy(() => import("./pages/ExperienceSection"));
@@ -28,15 +29,15 @@ const MessagesPage = lazy(() => import("./services/MessagesPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
-    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+    <Loader2 className="h-8 w-8 animate-spin text-blue-500 dark:text-blue-400" />
   </div>
 );
 
 const NotFound = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 font-mono">
     <h1 className="text-4xl font-bold">404</h1>
-    <p className="text-gray-600">This page doesn't exist.</p>
-    <Link to="/" className="text-blue-600 hover:underline">
+    <p className="text-muted-foreground">This page doesn't exist.</p>
+    <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline">
       Go home
     </Link>
   </div>
@@ -44,10 +45,11 @@ const NotFound = () => (
 
 export default function App() {
   return (
+    <ThemeProvider>
     <Router>
       <AuthProvider>
         <ProfileProvider>
-          <div className="App flex flex-col min-h-screen">
+          <div className="App flex flex-col min-h-screen bg-background text-foreground">
             <Header />
             <main className="flex-grow">
               <Suspense fallback={<PageLoader />}>
@@ -94,5 +96,6 @@ export default function App() {
         </ProfileProvider>
       </AuthProvider>
     </Router>
+    </ThemeProvider>
   );
 }
