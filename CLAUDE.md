@@ -21,8 +21,12 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 - Content blocks (project sections, learning pages) render through `src/component/ContentBlockView.tsx`. Don't add `dangerouslySetInnerHTML`; HTML goes in sandboxed iframes.
 - Vercel: keep the API as one function. `vercel.json` rewrites `/api/(.*)` → `/api`, because a `[...path]` file only matches one segment outside Next.js.
 
+## LKH sync
+- `POST /api/sync` / `GET /api/sync/export` (Bearer `SYNC_TOKEN`) bulk-upsert records by caller-chosen id; validated all-or-nothing; logged in `sync_log`. CLI: `npm run sync:push`. Design and payload format: `docs/lkh-sync.md`.
+
 ## Status / open items
-- Not yet deployed with Atlas: needs `MONGODB_URI`, `SESSION_SECRET`, `ADMIN_EMAILS`, `GOOGLE_CLIENT_ID` (and/or `ADMIN_PASSWORD`) set in Vercel.
-- Firebase migration hasn't been run against the real project yet (needs the old `VITE_APP_*` config).
+- Atlas: project "Project 0", free cluster `portfolio` (AWS US_EAST_1), database `portfolio`. Firestore data (5 projects, 9 certificates, 18 learning items) and seed content were imported on 2026-10-21 via the MongoDB Atlas connector.
+- Vercel project `portfolio` (team dev-rais-projects, domain divyanshrai.co) has `MONGODB_URI`, `MONGODB_DB` and `SESSION_SECRET`. Still needs `ADMIN_EMAILS`, and `GOOGLE_CLIENT_ID` and/or `ADMIN_PASSWORD`, before /admin works.
+- The 21 Firebase Storage files were recovered (Oct 2026, after a temporary Blaze upgrade) into `public/media/` (images converted to WebP) and the records re-linked to `/media/...`. `scripts/firebase-storage-missing.json` records the original paths. New uploads from the admin panel go to GridFS.
 - Home-page "Top Contributions" is empty until entries are added in Admin → Contributions (the old placeholder ones were fake).
 - The owner keeps agent notes and memories in a separate local project ("LKH"), which isn't on GitHub. Content from it can be added through the admin panel or the seed data.

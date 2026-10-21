@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
-    "migrate:firebase": "tsx --env-file-if-exists=.env scripts/migrate-from-firebase.ts"
+    "migrate:firebase": "tsx --env-file-if-exists=.env scripts/migrate-from-firebase.ts",
+    "sync:push": "tsx --env-file-if-exists=.env scripts/sync-push.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

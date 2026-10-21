@@ -1,0 +1,149 @@
+[
+  {
+    "collection": "projects",
+    "id": "4n50AsqPb0TYw59A1n3V",
+    "title": "OLYMPICS Dashboard",
+    "path": "image",
+    "firebasePath": "uploads/1732049295757_Screenshot 2024-11-20 021621.png"
+  },
+  {
+    "collection": "projects",
+    "id": "E4Hfoewl1x8qpUfSZTBG",
+    "title": "The College Coding Club",
+    "path": "image",
+    "firebasePath": "uploads/1729103246880_Screenshot 2024-10-16 235503.png"
+  },
+  {
+    "collection": "projects",
+    "id": "E4Hfoewl1x8qpUfSZTBG",
+    "title": "The College Coding Club",
+    "path": "sections[0].content[1].content",
+    "firebasePath": "uploads/1729106390699_Screenshot 2024-10-17 004936.png"
+  },
+  {
+    "collection": "projects",
+    "id": "ZnUSHveWO9nFueXR6MEn",
+    "title": "Driver Drowsiness Detection",
+    "path": "image",
+    "firebasePath": "uploads/1729362458684_images.png"
+  },
+  {
+    "collection": "projects",
+    "id": "ook4RRXJ0ZicmeMGSxBt",
+    "title": "Code Learner",
+    "path": "image",
+    "firebasePath": "uploads/1729361238213_Screenshot 2024-01-15 235310.png"
+  },
+  {
+    "collection": "projects",
+    "id": "sE3wneuGIoK9bZNjTp7Z",
+    "title": "Car Prices Analytics Dashboard",
+    "path": "image",
+    "firebasePath": "uploads/1731957565618_Screenshot 2024-11-19 004905.png"
+  },
+  {
+    "collection": "certificates",
+    "id": "dAuqTTOb7sSjYpNYqRZO",
+    "title": "Certificate of Completion",
+    "path": "image",
+    "firebasePath": "certificates/new/image/11.jpg"
+  },
+  {
+    "collection": "certificates",
+    "id": "yNyOI50LeGG6dyAcZzW2",
+    "title": "CCNAV7: Introduction to Networks",
+    "path": "image",
+    "firebasePath": "certificates/new/image/Screenshot 2024-10-20 000501.png"
+  },
+  {
+    "collection": "certificates",
+    "id": "sl9x1J2OOQ8a14jERteo",
+    "title": "AWS Machine Learning Foundations 2022 Certificate of Completion",
+    "path": "image",
+    "firebasePath": "certificates/new/image/Screenshot 2024-10-19 221139.png"
+  },
+  {
+    "collection": "certificates",
+    "id": "3PpUnaLVywI5fvKtmzyI",
+    "title": "AWS Academy Graduate - AWS Academy Machine Learning Foundations",
+    "path": "image",
+    "firebasePath": "certificates/new/image/Screenshot 2024-10-19 225701.png"
+  },
+  {
+    "collection": "certificates",
+    "id": "2o5cak5b0Q04j11d6CHK",
+    "title": "Google Cloud Big Data and Machine Learning Fundamentals",
+    "path": "image",
+    "firebasePath": "certificates/new/image/Screenshot 2024-10-19 221711.png"
+  },
+  {
+    "collection": "certificates",
+    "id": "by0aPwUR44w8LdB3jok6",
+    "title": "Python for Data Science, AI & Development",
+    "path": "image",
+    "firebasePath": "certificates/new/image/2.jpg"
+  },
+  {
+    "collection": "certificates",
+    "id": "G8q4eviRXzhAjz9upftt",
+    "title": " Python Institute Statement of Achievement - PCAP: Programming Essentials in Python",
+    "path": "image",
+    "firebasePath": "certificates/G8q4eviRXzhAjz9upftt/image/7.jpg"
+  },
+  {
+    "collection": "certificates",
+    "id": "GitmPbsnaRZGz7giDgUf",
+    "title": "PCAP: Programming Essentials in Python",
+    "path": "image",
+    "firebasePath": "certificates/GitmPbsnaRZGz7giDgUf/image/7.jpg"
+  },
+  {
+    "collection": "certificates",
+    "id": "UPWjGwAwvWTIaMnW4Wua",
+    "title": "Alibaba Cloud Certificate of Participation",
+    "path": "image",
+    "firebasePath": "certificates/new/image/10.jpg"
+  },
+  {
+    "collection": "directories",
+    "id": "bkIFeKzrsOWj7dG3xxPD",
+    "title": "Titanic Survival Prediction",
+    "path": "learningItem.content[0].content",
+    "firebasePath": "uploads/1729363935824_ML_Pipeline.html"
+  },
+  {
+    "collection": "directories",
+    "id": "bkIFeKzrsOWj7dG3xxPD",
+    "title": "Titanic Survival Prediction",
+    "path": "learningItem.content[2].content",
+    "firebasePath": "uploads/1729363987966_training_using_pipeline.html"
+  },
+  {
+    "collection": "directories",
+    "id": "gDD58RNeBCOci00wBD4m",
+    "title": "Ordinal Encoding",
+    "path": "learningItem.content[0].content",
+    "firebasePath": "uploads/1729086913701_ordinal_encoding.html"
+  },
+  {
+    "collection": "directories",
+    "id": "v8mB4URvmMBRTUZqzUrT",
+    "title": "Algorithmic Proficiency",
+    "path": "learningItem.content[1].content",
+    "firebasePath": "uploads/1731001510746_Screenshot 2024-11-07 224507.png"
+  },
+  {
+    "collection": "directories",
+    "id": "v8mB4URvmMBRTUZqzUrT",
+    "title": "Algorithmic Proficiency",
+    "path": "learningItem.content[3].content",
+    "firebasePath": "uploads/1731001804318_Screenshot 2024-11-07 225934.png"
+  },
+  {
+    "collection": "directories",
+    "id": "v8mB4URvmMBRTUZqzUrT",
+    "title": "Algorithmic Proficiency",
+    "path": "learningItem.content[5].content",
+    "firebasePath": "uploads/1731002510850_WhatsApp Image 2024-01-23 at 5.42.02 PM.jpeg"
+  }
+]
