@@ -1,11 +1,12 @@
-'use client'
-
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GraduationCap, Briefcase, CircleCheckBig, CircleDot } from 'lucide-react'
 import SectionItem from '../component/SectionItem'
+import type { Experience, ExperienceSection as ExperienceSectionName } from '@shared/schemas'
+import { seedExperience } from '@shared/seed-data'
+import { useApi } from '@/lib/api'
 
-const sections = [
+const sections: { id: ExperienceSectionName; icon: typeof GraduationCap }[] = [
   { id: 'Academic', icon: GraduationCap },
   { id: 'Professional', icon: Briefcase },
   { id: 'Offers', icon: CircleCheckBig },
@@ -13,93 +14,18 @@ const sections = [
 ]
 
 export default function ExperienceSection() {
-  const [activeSection, setActiveSection] = useState('Academic')
+  const [activeSection, setActiveSection] = useState<ExperienceSectionName>('Academic')
+  const { data, loading, error } = useApi<Experience[]>('/experience', [])
+  const entries = error ? seedExperience.map((e, i) => ({ ...e, id: `seed-${i}` })) : data
+  const visible = sections.filter((s) => loading || entries.some((e) => e.section === s.id))
 
   const renderSectionContent = () => {
-    switch (activeSection) {
-      case 'Academic':
-        return (
-          <>
-            <SectionItem
-              title="B.Tech - Artificial Intelligence & Machine Learning"
-              description="Grade : 8.7"
-              institution="Gyan Ganga Institute of Technology & Sciences, India"
-              dateRange="2020 - 2024"
-            />
-            <SectionItem
-              title="Class XII"
-              description="Grade : 8.3"
-              institution="Maths, Physics, Chemistry | CBSE"
-              dateRange="2020"
-            />
-            <SectionItem
-              title="Class X"
-              description="Percentage : 84.4%"
-              institution="Central Board of Secondary Education, India"
-              dateRange="2018"
-            />
-          </>
-        )
-      case 'Professional':
-        return (
-          <>
-            <SectionItem
-              title="Systems Engineer Trainee"
-              description="Trainings : Java | SQL | UNIX | UI Design"
-              institution="@ TCSL, India"
-              dateRange="August 2024 - Present"
-            />
-          </>
-        )
-      case 'Offers':
-        return (
-          <>
-            <SectionItem
-              title="Systems Engineer "
-              description="Full-time | Status: Accepted"
-              institution="@ TCS, India"
-              dateRange="18 July 2024"
-            />
-            <SectionItem
-              title="Frontend Developer "
-              description="Full-time | Status: Declined"
-              institution="@ Prodesk IT, India"
-              dateRange="20th July 2024"
-            />
-            <SectionItem
-              title="Software Development Engineer "
-              description="Internship + PPO | Status: Revoked"
-              institution="@ Brane Enterprises, India"
-              dateRange="14 September 2023"
-            />
-            <SectionItem
-              title="Got Awarded NLP research Intership"
-              description="Internship | Status: Declined"
-              institution="@ IIT Bombay, India"
-              dateRange="20th July 2024"
-            />
-          </>
-        )
-      case 'Participations':
-        return (
-          <>
-            <SectionItem
-              title="Finalist"
-              description="Developed a Data Analysis Dashboard using Tableau"
-              institution="Microsoft Engage 2022"
-              dateRange="2022"
-            />
-            <SectionItem
-              title="Pre-Finalist"
-              description="Cleared the first round of the Hackathon"
-              institution="Flipkart Grid '22"
-              dateRange="2022"
-            />
-          </>
-        )
-      default:
-        return null
-    }
+    if (loading) return <div className="h-40 rounded bg-gray-100 animate-pulse" />
+    return entries
+      .filter((e) => e.section === activeSection)
+      .map((e) => (
+        <SectionItem key={e.id} title={e.title} description={e.description} institution={e.institution} dateRange={e.dateRange} />
+      ))
   }
 
   return (
@@ -109,9 +35,9 @@ export default function ExperienceSection() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className=" text-black p-8 font-sans max-w-4xl w-full">
+      <div className="text-black px-4 py-8 sm:p-8 font-sans max-w-4xl w-full">
         <motion.h2 
-          className="text-4xl font-bold mb-2 text-center"
+          className="text-3xl sm:text-4xl font-bold mb-2 text-center"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -133,8 +59,9 @@ export default function ExperienceSection() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          {sections.map((section) => (
-            <motion.div
+          {visible.map((section) => (
+            <motion.button
+              type="button"
               key={section.id}
               className={`flex items-center cursor-pointer px-4 py-2 rounded-full transition-colors ${
                 activeSection === section.id ? 'bg-black text-white' : 'text-gray-400 hover:bg-gray-100'
@@ -145,7 +72,7 @@ export default function ExperienceSection() {
             >
               <section.icon className="w-5 h-5 mr-2" />
               <span>{section.id}</span>
-            </motion.div>
+            </motion.button>
           ))}
         </motion.div>
         

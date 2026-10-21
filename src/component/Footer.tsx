@@ -1,16 +1,11 @@
 import { motion } from 'framer-motion'
-import { FaGithub, FaKaggle, FaLinkedin, FaTwitter, FaYoutube } from "react-icons/fa"
-
-const socialLinks = [
-  { icon: FaGithub, href: "https://github.com/iceticshacker7" },
-  { icon: FaLinkedin, href: "https://www.linkedin.com/in/divyanshrai7" },
-  { icon: FaKaggle, href: "https://kaggle.com/divyanshrai7" },
-  { icon: FaTwitter, href: "https://twitter.com" },
-  { icon: FaYoutube, href: "https://youtube.com" },
-]
+import { Link } from 'react-router-dom'
+import { useProfile } from '@/lib/profile'
+import { socialIconMap } from '@/lib/icons'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
+  const { profile } = useProfile()
 
   return (
     <motion.footer 
@@ -27,8 +22,8 @@ export default function Footer() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">Divyansh Rai</h2>
-            <p className="text-sm text-gray-600 mt-2">System Engineer | ML Graduate</p>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">{profile.name}</h2>
+            <p className="text-sm text-gray-600 mt-2">{profile.footerTagline}</p>
           </motion.div>
           <motion.div 
             className="flex space-x-6"
@@ -36,18 +31,22 @@ export default function Footer() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            {socialLinks.map(({ icon: Icon, href }) => (
+            {profile.socials.map(({ platform, url: href }) => {
+              const { Icon, label } = socialIconMap[platform]
+              return (
               <motion.a
                 key={href}
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={label}
                 className="text-gray-600 hover:text-blue-500 transition-colors"
                 whileHover={{ scale: 1.2, rotate: 5 }}
               >
                 <Icon className="w-6 h-6" />
               </motion.a>
-            ))}
+              )
+            })}
           </motion.div>
         </div>
         <motion.div 
@@ -56,15 +55,11 @@ export default function Footer() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <p>&copy; {currentYear} Divyansh Rai. All rights reserved.</p>
+          <p>&copy; {currentYear} {profile.name}. All rights reserved.</p>
           <p className="mt-2">
-            <motion.a 
-              href="https://chatgpt.com/" 
-              className="text-blue-500 hover:text-blue-600 transition-colors"
-              whileHover={{ scale: 1.05 }}
-            >
-              Powered by AI
-            </motion.a>
+            <Link to="/login" className="text-gray-400 hover:text-blue-500 transition-colors">
+              Admin
+            </Link>
           </p>
         </motion.div>
       </div>

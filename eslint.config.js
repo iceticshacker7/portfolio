@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', '.vercel'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -19,10 +19,20 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' }],
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
     },
+  },
+  {
+    files: ['api/**/*.ts', 'server/**/*.ts', 'scripts/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    // shadcn/ui components and the icon map export helpers alongside components.
+    files: ['src/components/ui/**/*.tsx', 'src/lib/icons.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 )

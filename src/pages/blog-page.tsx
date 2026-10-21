@@ -1,35 +1,12 @@
-'use client'
-
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Link } from 'react-router-dom'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
+import type { DirectoryItem, Project } from '@shared/schemas'
+import { useApi } from '@/lib/api'
 import { ExternalLink, BookOpen, Search, Tag } from 'lucide-react'
 import { Input } from "@/components/ui/input"
-
-interface DirectoryItem {
-  id: string
-  name: string
-  type: 'folder' | 'file'
-  parentId: string | null
-  children?: DirectoryItem[]
-  learningItem?: LearningItem
-}
-
-interface LearningItem {
-  id: string
-  title: string
-  keywords: string[]
-  content: {
-    type: 'text' | 'image' | 'gif' | 'notebook' | 'code' | 'html'
-    category: boolean
-    content: string
-    language?: string
-  }[]
-}
 
 interface BlogItem {
   id: string
@@ -93,81 +70,19 @@ const ShimmerCard: React.FC = () => {
   )
 }
 
-const buildDirectoryTree = (items: DirectoryItem[]): DirectoryItem[] => {
-  const itemMap = new Map<string, DirectoryItem>();
-  const rootItems: DirectoryItem[] = [];
-
-  items.forEach(item => {
-    itemMap.set(item.id, { ...item, children: [] });
-  });
-
-  itemMap.forEach(item => {
-    if (item.parentId === null) {
-      rootItems.push(item);
-    } else {
-      const parent = itemMap.get(item.parentId);
-      if (parent) {
-        parent.children = parent.children || [];
-        parent.children.push(item);
-      }
-    }
-  });
-
-  return rootItems;
-};
-
 export default function BlogsPage() {
-  const [blogItems, setBlogItems] = useState<BlogItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const projects = useApi<Project[]>('/projects', [])
+  const directories = useApi<DirectoryItem[]>('/directories', [])
+  const loading = projects.loading || directories.loading
   const [filter, setFilter] = useState<'all' | 'project' | 'learning'>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    const fetchBlogItems = async () => {
-      try {
-        setLoading(true)
-        const projectsSnapshot = await getDocs(collection(db, 'projects'))
-        const directoriesSnapshot = await getDocs(collection(db, 'directories'))
-
-        const projectItems = projectsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          type: 'project'
-        })) as BlogItem[]
-
-        const fetchedDirectories = directoriesSnapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as DirectoryItem)
-        );
-        const structuredDirectories = buildDirectoryTree(fetchedDirectories);
-
-        const learningItems: BlogItem[] = [];
-        const extractLearningItems = (items: DirectoryItem[]) => {
-          items.forEach(item => {
-            if (item.type === 'file' && item.learningItem) {
-              learningItems.push({
-                id: item.id,
-                title: item.learningItem.title,
-                keywords: item.learningItem.keywords,
-                type: 'learning'
-              });
-            }
-            if (item.children) {
-              extractLearningItems(item.children);
-            }
-          });
-        };
-        extractLearningItems(structuredDirectories);
-
-        setBlogItems([...projectItems, ...learningItems])
-      } catch (error) {
-        console.error('Error fetching blog items:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchBlogItems()
-  }, [])
+  const blogItems: BlogItem[] = [
+    ...projects.data.map((p) => ({ id: p.id, title: p.title, description: p.description, tags: p.tags, type: 'project' as const })),
+    ...directories.data
+      .filter((d) => d.type === 'file' && d.learningItem)
+      .map((d) => ({ id: d.id, title: d.learningItem!.title || d.name, keywords: d.learningItem!.keywords, type: 'learning' as const })),
+  ]
 
   const filteredBlogItems = blogItems.filter(item => {
     const matchesFilter = filter === 'all' || item.type === filter

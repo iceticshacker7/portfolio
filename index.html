@@ -2,31 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href=".\src\assets\myimage.jpeg" />
-    <!-- <link href="D:\Portfolio\client\src\fonts\mono.woff2" rel="stylesheet"> -->
-
+    <link rel="icon" type="image/jpeg" href="/favicon.jpeg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Divyansh</title>
+    <meta name="description" content="Divyansh Rai: ML graduate and Systems Engineer. Projects, certificates, learnings and experience." />
+    <meta property="og:title" content="Divyansh Rai | Portfolio" />
+    <meta property="og:description" content="Projects, certificates, learnings and experience." />
+    <meta property="og:type" content="website" />
+    <title>Divyansh Rai | Portfolio</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx">
-            function sendHeight() {
-        const height = document.documentElement.scrollHeight;
-        window.parent.postMessage({ type: 'setHeight', height: height }, '*');
-      }
-
-      window.addEventListener('load', sendHeight);
-      window.addEventListener('resize', sendHeight);
-
-      const resizeObserver = new ResizeObserver(sendHeight);
-      resizeObserver.observe(document.body);
-
-      window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'getHeight') {
-          sendHeight();
-        }
-      });
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
