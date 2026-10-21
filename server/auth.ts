@@ -88,6 +88,37 @@ export async function verifyGoogleCredential(credential: string): Promise<Sessio
   return { email, name: payload.name as string | undefined, picture: payload.picture as string | undefined };
 }
 
+// Firebase Authentication (free on the Spark plan) signs users in with Google in the
+// browser; the server only verifies the resulting ID token against Google's public keys,
+// so no service account or Firebase Admin SDK is needed.
+const firebaseJwks = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"),
+);
+
+export function firebaseProjectId(): string {
+  return process.env.FIREBASE_PROJECT_ID || process.env.VITE_APP_PROJECT_ID || "";
+}
+
+export async function verifyFirebaseIdToken(idToken: string): Promise<Session> {
+  const projectId = firebaseProjectId();
+  if (!projectId) throw new HttpError(400, "Firebase sign-in is not configured");
+  let payload;
+  try {
+    ({ payload } = await jwtVerify(idToken, firebaseJwks, {
+      audience: projectId,
+      issuer: `https://securetoken.google.com/${projectId}`,
+      algorithms: ["RS256"],
+    }));
+  } catch {
+    throw new HttpError(401, "Invalid Firebase sign-in token");
+  }
+  const email = String(payload.email || "").toLowerCase();
+  if (!payload.email_verified || !adminEmails().includes(email)) {
+    throw new HttpError(403, `${email || "This account"} is not allowed to manage the portfolio`);
+  }
+  return { email, name: payload.name as string | undefined, picture: payload.picture as string | undefined };
+}
+
 export function passwordLoginEnabled(): boolean {
   return Boolean(process.env.ADMIN_PASSWORD) && adminEmails().length > 0;
 }

@@ -5,6 +5,7 @@ import { collections, contactSchema, profileSchema, syncRequestSchema, type Coll
 import {
   adminEmails,
   checkPassword,
+  firebaseProjectId,
   clearSession,
   createSession,
   getSession,
@@ -12,6 +13,7 @@ import {
   rateLimit,
   requireAdmin,
   requireSyncToken,
+  verifyFirebaseIdToken,
   verifyGoogleCredential,
 } from "./auth.js";
 import { getBucket, getDb } from "./db.js";
@@ -56,6 +58,9 @@ const newId = () => new ObjectId().toHexString();
 
 route("GET", "/api/auth/config", async (_req, res) => {
   sendJson(res, 200, {
+    // Sign-in is pointless until someone is allow-listed, so say so explicitly.
+    adminConfigured: adminEmails().length > 0,
+    firebaseEnabled: Boolean(firebaseProjectId()) && adminEmails().length > 0,
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
     passwordEnabled: passwordLoginEnabled(),
   });
@@ -70,6 +75,15 @@ route("POST", "/api/auth/google", async (req, res) => {
   const body = (await readJson(req)) as { credential?: unknown };
   if (typeof body?.credential !== "string") throw new HttpError(400, "credential is required");
   const session = await verifyGoogleCredential(body.credential);
+  await createSession(res, session);
+  sendJson(res, 200, { user: session });
+});
+
+route("POST", "/api/auth/firebase", async (req, res) => {
+  await rateLimit(`login:${clientIp(req)}`, 20, 900);
+  const body = (await readJson(req)) as { idToken?: unknown };
+  if (typeof body?.idToken !== "string") throw new HttpError(400, "idToken is required");
+  const session = await verifyFirebaseIdToken(body.idToken);
   await createSession(res, session);
   sendJson(res, 200, { user: session });
 });
