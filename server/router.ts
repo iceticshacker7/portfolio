@@ -1,7 +1,7 @@
 import type { ServerResponse } from "node:http";
 import { ObjectId, type Filter, type Document } from "mongodb";
 import { ZodError } from "zod";
-import { collections, contactSchema, profileSchema, type CollectionName } from "../shared/schemas.js";
+import { collections, contactSchema, profileSchema, syncRequestSchema, type CollectionName } from "../shared/schemas.js";
 import {
   adminEmails,
   checkPassword,
@@ -11,6 +11,7 @@ import {
   passwordLoginEnabled,
   rateLimit,
   requireAdmin,
+  requireSyncToken,
   verifyGoogleCredential,
 } from "./auth.js";
 import { getBucket, getDb } from "./db.js";
@@ -209,6 +210,79 @@ route("DELETE", "/api/files/:id", async (req, res, { id }) => {
   const bucket = await getBucket();
   await bucket.delete(new ObjectId(id)).catch(() => undefined);
   sendJson(res, 200, { ok: true });
+});
+
+// ---------- LKH sync (token auth, see docs/lkh-sync.md) ----------
+
+route("GET", "/api/sync/export", async (req, res) => {
+  await rateLimit(`sync:${clientIp(req)}`, 60, 3600);
+  requireSyncToken(req);
+  const db = await getDb();
+  const out: Record<string, unknown> = {};
+  for (const name of Object.keys(collections)) {
+    const docs = await db.collection<StoredDoc>(name).find().sort({ order: 1, createdAt: 1 }).toArray();
+    out[name] = docs.map(toApi);
+  }
+  const profile = await db.collection<StoredDoc>("profile").findOne({ _id: "main" });
+  const lastSync = await db.collection<StoredDoc>("sync_log").find().sort({ at: -1 }).limit(1).next();
+  sendJson(res, 200, { profile: profile ? toApi(profile) : null, collections: out, lastSync });
+});
+
+route("POST", "/api/sync", async (req, res) => {
+  await rateLimit(`sync:${clientIp(req)}`, 60, 3600);
+  requireSyncToken(req);
+  const body = syncRequestSchema.parse(await readJson(req, 3_000_000));
+
+  // Validate everything before writing anything, so a bad record can't leave a half-applied sync.
+  const upserts = Object.entries(body.upsert).map(([name, rows]) => {
+    const col = collectionParam(name);
+    return {
+      col,
+      rows: rows.map(({ id, ...doc }) => {
+        const parsed = collections[col].safeParse(doc);
+        // Prefix issue paths with collection/id so the caller knows which record failed.
+        if (!parsed.success) throw new ZodError(parsed.error.issues.map((i) => ({ ...i, path: [col, id, ...i.path] })));
+        return { id, data: parsed.data };
+      }),
+    };
+  });
+  const deletes = Object.entries(body.delete).map(([name, ids]) => ({ col: collectionParam(name), ids }));
+  const profile = body.profile ? profileSchema.parse(body.profile) : null;
+
+  const summary: Record<string, { upserted: number; updated: number; deleted: number }> = {};
+  const bump = (col: string) => (summary[col] ??= { upserted: 0, updated: 0, deleted: 0 });
+  if (body.dryRun) {
+    upserts.forEach(({ col, rows }) => (bump(col).updated = rows.length));
+    deletes.forEach(({ col, ids }) => (bump(col).deleted = ids.length));
+    sendJson(res, 200, { dryRun: true, profile: Boolean(profile), summary });
+    return;
+  }
+
+  const db = await getDb();
+  const now = new Date();
+  for (const { col, rows } of upserts) {
+    if (!rows.length) continue;
+    const result = await db.collection<StoredDoc>(col).bulkWrite(
+      rows.map(({ id, data }) => ({
+        updateOne: {
+          filter: { _id: id },
+          update: { $set: { ...data, updatedAt: now }, $setOnInsert: { createdAt: now } },
+          upsert: true,
+        },
+      })),
+    );
+    bump(col).upserted += result.upsertedCount;
+    bump(col).updated += result.modifiedCount;
+  }
+  for (const { col, ids } of deletes) {
+    if (!ids.length) continue;
+    bump(col).deleted += (await db.collection<StoredDoc>(col).deleteMany({ _id: { $in: ids } })).deletedCount;
+  }
+  if (profile) {
+    await db.collection<StoredDoc>("profile").updateOne({ _id: "main" }, { $set: { ...profile, updatedAt: now } }, { upsert: true });
+  }
+  await db.collection<StoredDoc>("sync_log").insertOne({ _id: newId(), at: now, source: body.source, profile: Boolean(profile), summary });
+  sendJson(res, 200, { ok: true, profile: Boolean(profile), summary });
 });
 
 // ---------- Generic collections ----------

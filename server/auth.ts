@@ -100,6 +100,21 @@ export function checkPassword(password: string): boolean {
   return timingSafeEqual(a, b);
 }
 
+/**
+ * Machine-to-machine auth for the LKH sync (see docs/lkh-sync.md): a long random
+ * SYNC_TOKEN sent as "Authorization: Bearer <token>". No cookies are involved,
+ * so this path needs no CSRF header.
+ */
+export function requireSyncToken(req: IncomingMessage) {
+  const expected = process.env.SYNC_TOKEN || "";
+  if (expected.length < 32) throw new HttpError(404, "Sync is not enabled");
+  const header = String(req.headers.authorization || "");
+  const given = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const a = createHash("sha256").update(given).digest();
+  const b = createHash("sha256").update(expected).digest();
+  if (!given || !timingSafeEqual(a, b)) throw new HttpError(401, "Invalid sync token");
+}
+
 /** Fixed-window rate limiter backed by a TTL collection, so it works across serverless instances. */
 export async function rateLimit(key: string, limit: number, windowSeconds: number) {
   const db = await getDb();

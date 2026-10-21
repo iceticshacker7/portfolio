@@ -120,6 +120,8 @@ export const ContentBlockView: React.FC<{ block: ContentBlock; zoomableImages?: 
     case "text":
       return <Markdown>{block.content}</Markdown>;
     case "code":
+      // Older content used code blocks with language "markdown" for formatted write-ups.
+      if (/^(markdown|md)$/i.test(block.language || "")) return <Markdown>{block.content}</Markdown>;
       return (
         <SyntaxHighlighter language={lang(block.language)} style={vscDarkPlus} customStyle={{ borderRadius: "0.5rem" }}>
           {block.content}

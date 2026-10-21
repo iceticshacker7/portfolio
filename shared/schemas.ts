@@ -149,6 +149,17 @@ export const collections = {
 } as const;
 
 export type CollectionName = keyof typeof collections;
+
+// Body of POST /api/sync. Records carry their own stable id (e.g. the LKH note id)
+// so re-running a sync updates them in place instead of creating duplicates.
+const syncId = z.string().regex(/^[\w-]{1,64}$/, "ids may use letters, digits, _ and - (max 64)");
+export const syncRequestSchema = z.object({
+  source: text(100).default("lkh"),
+  dryRun: z.boolean().default(false),
+  profile: z.unknown().optional(),
+  upsert: z.record(z.array(z.object({ id: syncId }).passthrough()).max(500)).default({}),
+  delete: z.record(z.array(syncId).max(500)).default({}),
+});
 type WithId<T> = T & { id: string };
 
 export type ContentBlock = z.infer<typeof contentBlock>;

@@ -21,8 +21,12 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 - Content blocks (project sections, learning pages) render through `src/component/ContentBlockView.tsx`. Don't add `dangerouslySetInnerHTML`; HTML goes in sandboxed iframes.
 - Vercel: keep the API as one function. `vercel.json` rewrites `/api/(.*)` → `/api`, because a `[...path]` file only matches one segment outside Next.js.
 
+## LKH sync
+- `POST /api/sync` / `GET /api/sync/export` (Bearer `SYNC_TOKEN`) bulk-upsert records by caller-chosen id; validated all-or-nothing; logged in `sync_log`. CLI: `npm run sync:push`. Design and payload format: `docs/lkh-sync.md`.
+
 ## Status / open items
-- Not yet deployed with Atlas: needs `MONGODB_URI`, `SESSION_SECRET`, `ADMIN_EMAILS`, `GOOGLE_CLIENT_ID` (and/or `ADMIN_PASSWORD`) set in Vercel.
-- Firebase migration hasn't been run against the real project yet (needs the old `VITE_APP_*` config).
+- Atlas: project "Project 0", free cluster `portfolio` (AWS US_EAST_1), database `portfolio`. Firestore data (5 projects, 9 certificates, 18 learning items) and seed content were imported on 2026-10-21 via the MongoDB Atlas connector.
+- Vercel project `portfolio` (team dev-rais-projects, domain divyanshrai.co) has `SESSION_SECRET` and `MONGODB_DB`. Still needs `MONGODB_URI` (an Atlas DB user plus network access `0.0.0.0/0`), `ADMIN_EMAILS`, and `GOOGLE_CLIENT_ID` and/or `ADMIN_PASSWORD`.
+- Firebase Storage is unreachable (402: Spark plan no longer serves Storage). The 21 lost files (certificate images, screenshots, 3 notebook HTMLs) are listed in `scripts/firebase-storage-missing.json` with the record each belonged to. Re-add them via the admin panel, or commit them under `public/media/` and point the records at `/media/<file>`.
 - Home-page "Top Contributions" is empty until entries are added in Admin → Contributions (the old placeholder ones were fake).
 - The owner keeps agent notes and memories in a separate local project ("LKH"), which isn't on GitHub. Content from it can be added through the admin panel or the seed data.

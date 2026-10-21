@@ -87,6 +87,19 @@ async function rewrite(value: unknown): Promise<unknown> {
   return value;
 }
 
+// The old site stored write-ups as type "code" + language "markdown" and
+// rendered them as markdown; the new schema calls those "text" blocks.
+type Block = { type?: string; language?: string; content?: string };
+const fixBlock = (b: Block): Block =>
+  b.type === "code" && /^(markdown|md)$/i.test(b.language || "") ? { type: "text", content: b.content } : b;
+function normalizeBlocks(doc: Record<string, unknown>) {
+  const sections = doc.sections as { content?: Block[] }[] | undefined;
+  sections?.forEach((s) => (s.content = s.content?.map(fixBlock)));
+  const learning = doc.learningItem as { content?: Block[] } | undefined;
+  if (learning?.content) learning.content = learning.content.map(fixBlock);
+  return doc;
+}
+
 for (const name of ["projects", "certificates", "directories"] as const) {
   let snapshot;
   try {
@@ -97,7 +110,7 @@ for (const name of ["projects", "certificates", "directories"] as const) {
   }
   let ok = 0;
   for (const doc of snapshot.docs) {
-    const raw = (await rewrite(doc.data())) as Record<string, unknown>;
+    const raw = normalizeBlocks((await rewrite(doc.data())) as Record<string, unknown>);
     // Old learning items stored their own (empty) id; it isn't part of the new schema.
     const parsed = collections[name].safeParse(raw);
     if (!parsed.success) {
