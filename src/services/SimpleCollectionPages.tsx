@@ -201,7 +201,7 @@ function CollectionEditor({ collection, config }: { collection: string; config: 
                     <p className="font-medium truncate">
                       {collection === 'achievements' ? `${row.icon} ` : ''}
                       {String(row[titleKey])}
-                      {row.featured ? <span className="ml-2 text-xs text-yellow-600">★ featured</span> : null}
+                      {row.featured ? <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400">★ featured</span> : null}
                     </p>
                     <p className="text-sm text-muted-foreground truncate">{config.summary(row)}</p>
                   </div>

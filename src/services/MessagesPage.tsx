@@ -28,11 +28,11 @@ export default function MessagesPage() {
       ) : (
         <div className="space-y-3">
           {messages.map((m) => (
-            <div key={m.id} className={`p-4 border rounded-md ${m.read ? 'bg-white' : 'bg-blue-50 border-blue-200'}`}>
+            <div key={m.id} className={`p-4 border rounded-md ${m.read ? 'bg-card' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800'}`}>
               <div className="flex flex-wrap items-start gap-2">
                 <div className="flex-grow min-w-0">
                   <p className="font-semibold">{m.name}</p>
-                  <a href={`mailto:${m.email}`} className="text-sm text-blue-600 hover:underline break-all">
+                  <a href={`mailto:${m.email}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all">
                     {m.email}
                   </a>
                 </div>
@@ -44,7 +44,7 @@ export default function MessagesPage() {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-gray-800">{m.message}</p>
+              <p className="mt-2 whitespace-pre-wrap text-foreground">{m.message}</p>
             </div>
           ))}
         </div>

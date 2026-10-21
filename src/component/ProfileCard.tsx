@@ -1,18 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useInView } from "framer-motion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Code, Globe, Award, BookOpen, Users, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Award, BookOpen, Calendar, CheckCircle, Code, ExternalLink, FileText, Github, Mail, Users, Sparkles } from "lucide-react";
 import type { Achievement, Certificate, Contribution, DirectoryItem, Project, SkillCategory as Skill } from "@shared/schemas";
 import { seedAchievements } from "@shared/seed-data";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useApi } from "@/lib/api";
+import { learningPath, prettyTag, projectPath } from "@/lib/content";
 import { useProfile } from "@/lib/profile";
 import { useSkills } from "@/lib/useSkills";
 import { SkillIconView, socialIconMap } from "@/lib/icons";
 import AboutSection from "./AboutSection";
 import ContactMeModal from "./ContactMeModal";
+import { useStaticSeo } from "@/lib/seo";
 
 /** Featured items first; if nothing is marked featured yet, show the first few so the section isn't empty. */
 function useFeatured<T extends { featured?: boolean }>(path: string, limit: number) {
@@ -21,257 +21,236 @@ function useFeatured<T extends { featured?: boolean }>(path: string, limit: numb
   return { items: (featured.length ? featured : data).slice(0, limit), loading };
 }
 
-const cardClass =
-  "w-full bg-white border-2 border-gray-200 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 h-full";
-
-const SkillCategory: React.FC<{ skill: Skill; index: number }> = ({ skill, index }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  return (
-    <motion.div
-      ref={ref}
-      className="rounded-lg p-6 flex flex-col items-center transform transition-all hover:scale-105"
-      initial={{ opacity: 0, y: 50 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-    >
-      <motion.div
-        className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-teal-500 to-blue-500 text-white mb-4"
-        whileHover={{ rotate: 360 }}
-        transition={{ duration: 0.5 }}
-      >
-        <SkillIconView icon={skill.icon} className="w-6 h-6" />
-      </motion.div>
-      <h3 className="text-xl font-semibold mb-4 text-center">{skill.name}</h3>
-      <div className="flex flex-wrap justify-center gap-2">
-        {skill.skills.map((item, index) => (
-          <motion.span
-            key={item}
-            className="bg-gradient-to-r from-teal-100 to-blue-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
-            whileHover={{ scale: 1.1 }}
-          >
-            {item}
-          </motion.span>
-        ))}
-      </div>
-    </motion.div>
-  );
+const reveal = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.45 },
 };
 
-const PointList: React.FC<{ points: string[] }> = ({ points }) =>
-  points.length ? (
-    <ul className="list-disc list-inside mb-4">
-      {points.map((point) => (
-        <li key={point} className="text-sm text-gray-600">
-          {point}
-        </li>
-      ))}
-    </ul>
-  ) : null;
+const card =
+  "group h-full rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-500/30";
 
-const ExternalButton: React.FC<{ href: string; children: React.ReactNode; tone?: "teal" | "blue" }> = ({ href, children, tone = "teal" }) => (
-  <Button
-    variant="outline"
-    asChild
-    className={tone === "teal" ? "text-teal-600 hover:bg-teal-50 border-teal-200" : "text-blue-600 hover:bg-blue-50 border-blue-200"}
-  >
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  </Button>
-);
-
-const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
-  const points = project.keyPoints.length ? project.keyPoints : project.tags.slice(0, 3);
-  return (
-    <Card className={cardClass}>
-      <CardContent className="p-6 flex flex-col h-full">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">{project.title}</h3>
-        <div className="flex-grow">
-          <PointList points={points} />
-        </div>
-        <div className="flex flex-wrap gap-2 justify-between">
-          <Button variant="outline" asChild className="text-teal-600 hover:bg-teal-50 border-teal-200">
-            <Link to={`/projects/${project.id}`}>Details</Link>
-          </Button>
-          {project.liveUrl && (
-            <ExternalButton href={project.liveUrl} tone="blue">
-              Live Demo
-            </ExternalButton>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const CertificateCard: React.FC<{ certificate: Certificate; onClick: () => void }> = ({ certificate, onClick }) => (
-  <Card className={`${cardClass} cursor-pointer`} onClick={onClick}>
-    <CardContent className="p-6">
-      {certificate.image ? (
-        <img src={certificate.image} alt={certificate.title} loading="lazy" className="w-full h-40 object-cover mb-4 rounded" />
-      ) : (
-        <div className="w-full h-40 mb-4 rounded bg-gradient-to-br from-teal-100 to-blue-100 flex items-center justify-center">
-          <Award className="w-12 h-12 text-teal-500" />
-        </div>
-      )}
-      <h3 className="text-xl font-bold mb-2 text-gray-800">{certificate.title}</h3>
-      {certificate.instituteName && <p className="text-sm text-gray-500 mb-3">{certificate.instituteName}</p>}
-      {certificate.credentialUrl && (
-        <Button
-          variant="outline"
-          asChild
-          className="w-full text-teal-600 hover:bg-teal-50 border-teal-200"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <a href={certificate.credentialUrl} target="_blank" rel="noopener noreferrer">
-            Verify Certificate
-          </a>
-        </Button>
-      )}
-    </CardContent>
-  </Card>
-);
-
-const LearningCard: React.FC<{ item: DirectoryItem }> = ({ item }) => (
-  <Card className={cardClass}>
-    <CardContent className="p-6 flex flex-col h-full">
-      <h3 className="text-xl font-bold mb-4 text-gray-800">{item.learningItem?.title || item.name}</h3>
-      <div className="flex-grow">
-        <PointList points={(item.learningItem?.keywords || []).slice(0, 4)} />
-      </div>
-      <Button variant="outline" asChild className="w-full text-blue-600 hover:bg-blue-50 border-blue-200">
-        <Link to={`/learning/${item.id}`}>Read More</Link>
-      </Button>
-    </CardContent>
-  </Card>
-);
-
-const ContributionCard: React.FC<{ contribution: Contribution }> = ({ contribution }) => (
-  <Card className={cardClass}>
-    <CardContent className="p-6 flex flex-col h-full">
-      <h3 className="text-xl font-bold mb-4 text-gray-800">{contribution.title}</h3>
-      <div className="flex-grow">
-        <PointList points={contribution.keyPoints} />
-      </div>
-      {contribution.link && <ExternalButton href={contribution.link}>View Project</ExternalButton>}
-    </CardContent>
-  </Card>
-);
-
-const FeaturedAchievements: React.FC<{ achievements: Achievement[]; onOpen: (link: string) => void }> = ({ achievements, onOpen }) => {
-  const [completed, setCompleted] = useState<Record<string, boolean>>({});
-
-  const toggleAchievement = (achievement: Achievement) => {
-    setCompleted((prev) => ({ ...prev, [achievement.id]: !prev[achievement.id] }));
-    if (achievement.link) onOpen(achievement.link);
-  };
-
-  return (
-    <div className="flex justify-center w-full p-1 mt-10 font-mono">
-      <div className="w-full max-w-6xl flex flex-wrap gap-3 justify-center">
-        {achievements.map((achievement, index) => {
-          const done = completed[achievement.id];
-          return (
-            <motion.button
-              type="button"
-              key={achievement.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`flex items-center text-left p-3 border-2 rounded-lg ${
-                done ? "bg-teal-100 border-teal-300" : "bg-white border-gray-200"
-              }`}
-              onClick={() => toggleAchievement(achievement)}
-              whileHover={{ scale: 1.05, boxShadow: "0px 3px 10px rgba(0,0,0,0.1)" }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <motion.span
-                className="mr-3 text-2xl"
-                animate={{ rotate: done ? 360 : 0 }}
-                transition={{ duration: 0.5 }}
-                aria-hidden
-              >
-                {achievement.icon}
-              </motion.span>
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={done ? "done" : "todo"}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className={done ? "line-through text-gray-500" : "text-gray-800"}
-                >
-                  {achievement.text}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; action?: React.ReactNode }> = ({
+/** One heading pattern for every home section: title + subtitle on the left, "view all" on the right. */
+function Section({
+  id,
   title,
+  subtitle,
   icon,
-  children,
   action,
-}) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-
+  tinted = false,
+  children,
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  action?: { to: string; label: string };
+  tinted?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <motion.section
-      ref={ref}
-      className="w-full max-w-6xl my-12 sm:my-16"
-      initial={{ opacity: 0, y: 50 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-      transition={{ duration: 0.5 }}
-    >
-      <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center flex items-center justify-center gap-2 text-gray-800">
-        {icon}
-        <span>{title}</span>
-      </h2>
-      {children}
-      {action && <div className="mt-8 flex justify-center">{action}</div>}
-    </motion.section>
+    <section id={id} className={`w-full py-16 sm:py-20 ${tinted ? "bg-muted/40 border-y border-border/60" : ""}`}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div {...reveal} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
+          <div>
+            <h2 className="flex items-center gap-2.5 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                {icon}
+              </span>
+              {title}
+            </h2>
+            {subtitle && <p className="mt-2 text-muted-foreground">{subtitle}</p>}
+          </div>
+          {action && (
+            <Link
+              to={action.to}
+              className="group/link inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0"
+            >
+              {action.label}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5" />
+            </Link>
+          )}
+        </motion.div>
+        {children}
+      </div>
+    </section>
   );
-};
+}
 
-const SeeAll: React.FC<{ to: string; label: string }> = ({ to, label }) => (
-  <Link to={to} className="inline-flex items-center text-blue-600 font-semibold hover:underline group">
-    {label}
-    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-  </Link>
+const Grid = ({ children, cols = 3 }: { children: React.ReactNode; cols?: 3 | 4 }) => (
+  <div className={`grid grid-cols-1 sm:grid-cols-2 ${cols === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-6`}>{children}</div>
 );
 
-const ShimmerGrid: React.FC<{ count: number }> = ({ count }) => (
+const Shimmer = ({ count, tall = false }: { count: number; tall?: boolean }) => (
   <>
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="h-48 rounded-xl bg-gray-100 animate-pulse" />
+      <div key={i} className={`${tall ? "h-80" : "h-56"} rounded-2xl bg-muted animate-pulse`} />
     ))}
   </>
 );
 
+const Chip = ({ children }: { children: React.ReactNode }) => (
+  <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-foreground/80">
+    {children}
+  </span>
+);
+
+function SkillCard({ skill, index }: { skill: Skill; index: number }) {
+  return (
+    <motion.div {...reveal} transition={{ duration: 0.45, delay: index * 0.08 }} className={`${card} p-6`}>
+      <div className="flex items-center gap-3 mb-4">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+          <SkillIconView icon={skill.icon} className="h-5 w-5" />
+        </span>
+        <h3 className="text-lg font-semibold text-foreground">{skill.name}</h3>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {skill.skills.map((s) => (
+          <Chip key={s}>{s}</Chip>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function ProjectCard({ project }: { project: Project }) {
+  return (
+    <article className={`${card} flex flex-col overflow-hidden`}>
+      <Link to={projectPath(project)} className="block aspect-[16/10] overflow-hidden bg-muted" tabIndex={-1} aria-hidden="true">
+        {project.image ? (
+          <img src={project.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        ) : (
+          <div className="h-full w-full bg-muted" />
+        )}
+      </Link>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-base font-semibold text-foreground leading-snug">
+          <Link to={projectPath(project)} className="hover:text-blue-600 dark:hover:text-blue-400">
+            {project.title}
+          </Link>
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground line-clamp-3 flex-1">{project.description}</p>
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {project.tags.slice(0, 3).map((t) => (
+            <Chip key={t}>{prettyTag(t)}</Chip>
+          ))}
+        </div>
+        <div className="mt-4 flex items-center gap-4 text-sm font-medium">
+          <Link to={projectPath(project)} className="text-blue-600 dark:text-blue-400 hover:underline">
+            Read case study
+          </Link>
+          {project.liveUrl && (
+            <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+              <ExternalLink className="h-3.5 w-3.5" /> Live
+            </a>
+          )}
+          {project.githubUrl && (
+            <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+              <Github className="h-3.5 w-3.5" /> Code
+            </a>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+const formatDate = (d: string) => {
+  if (!d) return "";
+  const date = new Date(d);
+  return Number.isNaN(date.getTime()) ? d : date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+};
+
+function CertificateCard({ certificate, onOpen }: { certificate: Certificate; onOpen: () => void }) {
+  return (
+    <article className={`${card} flex flex-col overflow-hidden`}>
+      {/* Certificates are documents: show the whole page on a light mat instead of cropping it. */}
+      <button type="button" onClick={onOpen} className="block aspect-[4/3] bg-white p-3 border-b border-border" aria-label={`View ${certificate.title}`}>
+        {certificate.image ? (
+          <img src={certificate.image} alt="" loading="lazy" className="h-full w-full object-contain" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-blue-500">
+            <Award className="h-12 w-12" />
+          </div>
+        )}
+      </button>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-base font-semibold text-foreground leading-snug line-clamp-2">{certificate.title}</h3>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {certificate.instituteName}
+          {certificate.date && ` · ${formatDate(certificate.date)}`}
+        </p>
+        <div className="flex-1" />
+        {certificate.credentialUrl && (
+          <a
+            href={certificate.credentialUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:underline"
+          >
+            <CheckCircle className="h-4 w-4" /> Verify credential
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function LearningCard({ item }: { item: DirectoryItem }) {
+  return (
+    <Link to={learningPath(item)} className={`${card} flex flex-col p-6`}>
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 mb-4">
+        <BookOpen className="h-5 w-5" />
+      </span>
+      <h3 className="text-base font-semibold text-foreground leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        {item.learningItem?.title || item.name}
+      </h3>
+      <div className="mt-3 flex flex-wrap gap-1.5 flex-1 content-start">
+        {(item.learningItem?.keywords || []).slice(0, 4).map((k) => (
+          <Chip key={k}>{prettyTag(k)}</Chip>
+        ))}
+      </div>
+      <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400">
+        Read <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </Link>
+  );
+}
+
+function ContributionCard({ contribution }: { contribution: Contribution }) {
+  return (
+    <article className={`${card} flex flex-col p-6`}>
+      <h3 className="text-base font-semibold text-foreground">{contribution.title}</h3>
+      <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground flex-1">
+        {contribution.keyPoints.map((p) => (
+          <li key={p} className="flex gap-2">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+            {p}
+          </li>
+        ))}
+      </ul>
+      {contribution.link && (
+        <a href={contribution.link} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+          View <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      )}
+    </article>
+  );
+}
+
 export default function EnhancedPortfolio() {
+  useStaticSeo("/");
   const { profile } = useProfile();
   const navigate = useNavigate();
   const [typedText, setTypedText] = useState("");
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
-  const [achievementLink, setAchievementLink] = useState<string | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const { skills: featuredSkills } = useSkills(true);
   const achievementsApi = useApi<Achievement[]>("/achievements", []);
   const achievements = achievementsApi.error ? seedAchievements.map((a, i) => ({ ...a, id: `seed-${i}` })) : achievementsApi.data;
-  const projects = useFeatured<Project>("/projects", 4);
+  const projects = useFeatured<Project>("/projects", 3);
   const certificates = useFeatured<Certificate>("/certificates", 3);
   const contributions = useApi<Contribution[]>("/contributions", []);
   const directories = useApi<DirectoryItem[]>("/directories", []);
@@ -288,232 +267,242 @@ export default function EnhancedPortfolio() {
       } else {
         clearInterval(typingInterval);
       }
-    }, 100);
-
+    }, 60);
     return () => clearInterval(typingInterval);
   }, [fullText]);
 
   const openAchievement = (link: string) => {
-    // Internal pages navigate normally; external pages open in a new tab since
-    // most sites refuse to be framed.
     if (link.startsWith("/")) navigate(link);
-    else setAchievementLink(link);
+    else window.open(link, "_blank", "noopener,noreferrer");
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-gray-50 to-blue-50 p-4 pt-12 sm:pt-20 overflow-x-hidden">
-      <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-6xl">
-        <Card className="w-full bg-white border-2 border-gray-200 rounded-3xl shadow-lg font-mono overflow-hidden">
-          <CardContent className="p-6 sm:p-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              <div className="flex flex-col items-center md:items-start">
-                <motion.div whileHover={{ scale: 1.1 }} transition={{ type: "spring", stiffness: 300 }}>
-                  <Avatar className="w-32 h-32 border-2 border-gray-300 rounded-full overflow-hidden">
-                    <AvatarImage src={profile.avatar} alt={profile.name} className="object-cover" />
-                    <AvatarFallback>{profile.initials}</AvatarFallback>
-                  </Avatar>
-                </motion.div>
-                <motion.h1
-                  className="mt-4 text-2xl sm:text-3xl font-bold text-gray-800 text-center md:text-left"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  {profile.name}
-                </motion.h1>
-                <div className="flex space-x-4 mt-2">
-                  {profile.socials.map(({ platform, url }, index) => {
-                    const { Icon, label } = socialIconMap[platform];
-                    return (
-                      <motion.a
-                        key={url}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={label}
-                        whileHover={{ scale: 1.2, rotate: 5 }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 + index * 0.1 }}
-                      >
-                        <Icon className="w-6 h-6 text-gray-600 hover:text-teal-600 transition-colors" />
-                      </motion.a>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex-grow w-full">
-                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-6 min-h-[1.75rem] text-center md:text-left" aria-label={fullText}>
-                  {typedText}
-                </p>
-                <ul className="space-y-2 text-base sm:text-lg pl-6 md:pl-10 list-disc">
-                  {profile.focusAreas.map((area, index) => (
-                    <motion.li
-                      key={area}
-                      initial={{ opacity: 0, x: -50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + index * 0.1 }}
-                      className="text-gray-700"
-                    >
-                      {area}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex flex-col gap-3">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    onClick={() => setIsContactModalOpen(true)}
-                    className="w-full bg-white border-2 border-teal-500 text-teal-600 hover:bg-teal-50 font-bold py-2 px-4 rounded-lg relative overflow-hidden group"
-                  >
-                    <span className="relative z-10">Hire Me : Contact</span>
-                    <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                  </Button>
-                </motion.div>
-                {profile.resumeUrl && (
-                  <Button variant="outline" asChild>
-                    <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer">
-                      Download Resume
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </div>
-            {profile.keySkills && (
-              <motion.div
-                className="mt-8 text-center text-base sm:text-lg"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-              >
-                <strong className="text-gray-800">Key Skills:</strong> <span className="text-gray-600">{profile.keySkills}</span>
-              </motion.div>
+    <div className="w-full overflow-x-hidden">
+      {/* ---------- Hero ---------- */}
+      <section className="relative w-full border-b border-border/60 bg-gradient-to-b from-blue-50/80 to-background dark:from-blue-950/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 grid gap-12 md:grid-cols-[1.4fr_1fr] items-center">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center md:text-left">
+            <p className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-blue-500" /> Open to AI/ML opportunities
+            </p>
+            <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
+              <span className="block text-lg sm:text-xl font-medium text-muted-foreground mb-2">Hi, I'm</span>
+              {profile.name}
+            </h1>
+            <p className="mt-4 text-lg sm:text-xl font-medium text-foreground/80 min-h-[1.75rem]" aria-label={fullText}>
+              {typedText}
+              <span className="ml-0.5 inline-block w-0.5 h-5 align-middle bg-blue-500 animate-pulse" aria-hidden="true" />
+            </p>
+            {profile.focusAreas.length > 0 && (
+              <ul className="mt-6 flex flex-wrap justify-center md:justify-start gap-2" aria-label="Focus areas">
+                {profile.focusAreas.map((area) => (
+                  <li key={area}>
+                    <Chip>{area}</Chip>
+                  </li>
+                ))}
+              </ul>
             )}
-          </CardContent>
-        </Card>
-      </motion.div>
+            <div className="mt-8 flex flex-wrap justify-center md:justify-start gap-3">
+              <button
+                onClick={() => setIsContactModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-md"
+              >
+                <Mail className="h-4 w-4" /> Get in touch
+              </button>
+              <Link to="/projects" className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted">
+                View projects <ArrowRight className="h-4 w-4" />
+              </Link>
+              {profile.resumeUrl && (
+                <a
+                  href={profile.resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+                >
+                  <FileText className="h-4 w-4" /> Resume
+                </a>
+              )}
+            </div>
+            <div className="mt-8 flex justify-center md:justify-start gap-3">
+              {profile.socials.map(({ platform, url }) => {
+                const { Icon, label } = socialIconMap[platform];
+                return (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                );
+              })}
+            </div>
+          </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="relative mx-auto w-56 sm:w-72 md:w-80 aspect-square"
+          >
+            <div className="relative h-full w-full rounded-full p-1 bg-border shadow-xl">
+              <img src={profile.avatar} alt={profile.name} className="h-full w-full rounded-full object-cover border-4 border-background" />
+            </div>
+          </motion.div>
+        </div>
+
+        {profile.keySkills && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+            <p className="text-center md:text-left text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">Key skills:</span> {profile.keySkills}
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* ---------- Highlights ---------- */}
       {achievements.length > 0 && (
-        <Section title="Featured Achievements" icon={<Award className="w-8 h-8 text-teal-500" />}>
-          <FeaturedAchievements achievements={achievements} onOpen={openAchievement} />
+        <section aria-label="Highlights" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {achievements.map((a, i) => {
+              const content = (
+                <>
+                  <span className="text-2xl" aria-hidden="true">
+                    {a.icon}
+                  </span>
+                  <span className="text-sm font-medium text-foreground leading-snug">{a.text}</span>
+                </>
+              );
+              const cls = "flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm text-left";
+              return (
+                <motion.div key={a.id} {...reveal} transition={{ duration: 0.4, delay: i * 0.06 }}>
+                  {a.link ? (
+                    <button type="button" onClick={() => openAchievement(a.link)} className={`${cls} w-full h-full hover:border-blue-500/40 hover:shadow-md transition-all`}>
+                      {content}
+                    </button>
+                  ) : (
+                    <div className={`${cls} h-full`}>{content}</div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {(projects.loading || projects.items.length > 0) && (
+        <Section
+          id="projects"
+          title="Featured Projects"
+          subtitle="Selected work across machine learning, data analysis and full-stack development."
+          icon={<Code className="h-5 w-5" />}
+          action={{ to: "/projects", label: "All projects" }}
+        >
+          <Grid>
+            {projects.loading ? <Shimmer count={3} tall /> : projects.items.map((p) => <ProjectCard key={p.id} project={p} />)}
+          </Grid>
         </Section>
       )}
 
       {featuredSkills.length > 0 && (
         <Section
-          title="Top Skills"
-          icon={<Globe className="w-8 h-8 text-blue-500" />}
-          action={<SeeAll to="/resume" label="All skills" />}
+          id="skills"
+          tinted
+          title="Core Skills"
+          subtitle="The tools and fields I work with most."
+          icon={<Sparkles className="h-5 w-5" />}
+          action={{ to: "/resume", label: "All skills" }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Grid>
             {featuredSkills.map((skill, index) => (
-              <SkillCategory key={skill.id} skill={skill} index={index} />
+              <SkillCard key={skill.id} skill={skill} index={index} />
             ))}
-          </div>
-        </Section>
-      )}
-
-      {(projects.loading || projects.items.length > 0) && (
-        <Section title="Projects" icon={<Code className="w-8 h-8 text-teal-500" />} action={<SeeAll to="/projects" label="All projects" />}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {projects.loading ? <ShimmerGrid count={4} /> : projects.items.map((p) => <ProjectCard key={p.id} project={p} />)}
-          </div>
+          </Grid>
         </Section>
       )}
 
       {(certificates.loading || certificates.items.length > 0) && (
         <Section
-          title="Certificates"
-          icon={<Award className="w-8 h-8 text-blue-500" />}
-          action={<SeeAll to="/certificates" label="All certificates" />}
+          id="certificates"
+          title="Certifications"
+          subtitle="Verified credentials from Google Cloud, AWS, IBM, Cisco and more."
+          icon={<Award className="h-5 w-5" />}
+          action={{ to: "/certificates", label: "All certificates" }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Grid>
             {certificates.loading ? (
-              <ShimmerGrid count={3} />
+              <Shimmer count={3} tall />
             ) : (
-              certificates.items.map((c) => <CertificateCard key={c.id} certificate={c} onClick={() => setSelectedCertificate(c)} />)
+              certificates.items.map((c) => <CertificateCard key={c.id} certificate={c} onOpen={() => setSelectedCertificate(c)} />)
             )}
-          </div>
+          </Grid>
         </Section>
       )}
 
       {learnings.length > 0 && (
-        <Section title="Top Learnings" icon={<BookOpen className="w-8 h-8 text-teal-500" />} action={<SeeAll to="/learnings" label="All learnings" />}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <Section
+          id="learnings"
+          tinted
+          title="Learning Notes"
+          subtitle="Write-ups from what I've been studying and building."
+          icon={<BookOpen className="h-5 w-5" />}
+          action={{ to: "/learnings", label: "All learnings" }}
+        >
+          <Grid>
             {learnings.map((l) => (
               <LearningCard key={l.id} item={l} />
             ))}
-          </div>
+          </Grid>
         </Section>
       )}
 
       {contributions.data.length > 0 && (
-        <Section title="Top Contributions" icon={<Users className="w-8 h-8 text-blue-500" />}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <Section id="contributions" title="Contributions" icon={<Users className="h-5 w-5" />}>
+          <Grid>
             {contributions.data.map((c) => (
               <ContributionCard key={c.id} contribution={c} />
             ))}
-          </div>
+          </Grid>
         </Section>
       )}
 
-      <AnimatePresence>
-        {selectedCertificate && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={() => setSelectedCertificate(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              className="bg-white rounded-lg p-4 max-w-3xl w-full max-h-[90vh] overflow-auto"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label={selectedCertificate.title}
-            >
-              <h3 className="text-xl sm:text-2xl font-bold mb-4 text-gray-800">{selectedCertificate.title}</h3>
-              {selectedCertificate.image && <img src={selectedCertificate.image} alt={selectedCertificate.title} className="w-full h-auto" />}
-              {selectedCertificate.description && <p className="mt-4 text-gray-600">{selectedCertificate.description}</p>}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {achievementLink && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={() => setAchievementLink(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              className="bg-white rounded-lg p-4 w-full max-w-4xl h-[80vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-end mb-2">
-                <ExternalButton href={achievementLink}>Open in new tab</ExternalButton>
-              </div>
-              <iframe
-                src={achievementLink}
-                title="Achievement Details"
-                className="w-full flex-grow border-none"
-                sandbox="allow-scripts allow-same-origin allow-popups"
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
       <AboutSection contact={() => setIsContactModalOpen(true)} />
+
+      <Dialog open={selectedCertificate !== null} onOpenChange={(open) => !open && setSelectedCertificate(null)}>
+        <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-4 sm:p-6">
+          {selectedCertificate && (
+            <>
+              <DialogTitle className="pr-8 text-lg sm:text-xl">{selectedCertificate.title}</DialogTitle>
+              <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>{selectedCertificate.instituteName}</span>
+                {selectedCertificate.date && (
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" /> {formatDate(selectedCertificate.date)}
+                  </span>
+                )}
+              </p>
+              {selectedCertificate.image && (
+                <div className="rounded-lg bg-white p-2 border border-border">
+                  <img src={selectedCertificate.image} alt={selectedCertificate.title} className="w-full max-h-[65vh] object-contain" />
+                </div>
+              )}
+              {selectedCertificate.credentialUrl && (
+                <a
+                  href={selectedCertificate.credentialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                >
+                  <CheckCircle className="h-4 w-4" /> Verify credential
+                </a>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       <ContactMeModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
     </div>
   );

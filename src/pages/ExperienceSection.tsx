@@ -5,6 +5,8 @@ import SectionItem from '../component/SectionItem'
 import type { Experience, ExperienceSection as ExperienceSectionName } from '@shared/schemas'
 import { seedExperience } from '@shared/seed-data'
 import { useApi } from '@/lib/api'
+import PageHeader, { PageShell } from '@/component/PageHeader'
+import { useStaticSeo } from '@/lib/seo'
 
 const sections: { id: ExperienceSectionName; icon: typeof GraduationCap }[] = [
   { id: 'Academic', icon: GraduationCap },
@@ -14,13 +16,14 @@ const sections: { id: ExperienceSectionName; icon: typeof GraduationCap }[] = [
 ]
 
 export default function ExperienceSection() {
+  useStaticSeo('/experience')
   const [activeSection, setActiveSection] = useState<ExperienceSectionName>('Academic')
   const { data, loading, error } = useApi<Experience[]>('/experience', [])
   const entries = error ? seedExperience.map((e, i) => ({ ...e, id: `seed-${i}` })) : data
   const visible = sections.filter((s) => loading || entries.some((e) => e.section === s.id))
 
   const renderSectionContent = () => {
-    if (loading) return <div className="h-40 rounded bg-gray-100 animate-pulse" />
+    if (loading) return <div className="h-40 rounded bg-muted animate-pulse" />
     return entries
       .filter((e) => e.section === activeSection)
       .map((e) => (
@@ -29,72 +32,45 @@ export default function ExperienceSection() {
   }
 
   return (
-    <motion.div 
-      className="flex items-center justify-center bg-gradient-to-br from-white to-gray-50 pb-16"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="text-black px-4 py-8 sm:p-8 font-sans max-w-4xl w-full">
-        <motion.h2 
-          className="text-3xl sm:text-4xl font-bold mb-2 text-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          Experience
-        </motion.h2>
-        <motion.p 
-          className="text-gray-600 mb-8 text-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          My journey in the academic & professional front
-        </motion.p>
-        
-        <motion.div 
-          className="flex flex-wrap justify-center mb-8 gap-4"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
+    <PageShell>
+      <PageHeader eyebrow="Journey" title="Experience" subtitle="My path across academics, work, offers and competitions." />
+
+      <div className="max-w-3xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-2 mb-10" role="tablist" aria-label="Experience categories">
           {visible.map((section) => (
-            <motion.button
+            <button
               type="button"
+              role="tab"
+              aria-selected={activeSection === section.id}
               key={section.id}
-              className={`flex items-center cursor-pointer px-4 py-2 rounded-full transition-colors ${
-                activeSection === section.id ? 'bg-black text-white' : 'text-gray-400 hover:bg-gray-100'
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                activeSection === section.id
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/30'
               }`}
               onClick={() => setActiveSection(section.id)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
-              <section.icon className="w-5 h-5 mr-2" />
-              <span>{section.id}</span>
-            </motion.button>
+              <section.icon className="w-4 h-4" />
+              {section.id}
+            </button>
           ))}
-        </motion.div>
-        
-        <motion.div 
-          className="relative border-l-2 border-black pl-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
+        </div>
+
+        <div className="relative border-l-2 border-border pl-8 ml-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-6"
             >
               {renderSectionContent()}
             </motion.div>
           </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </PageShell>
   )
 }

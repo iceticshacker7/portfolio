@@ -127,10 +127,10 @@ export function ContentBlocksEditor({
   return (
     <div className="space-y-3">
       {blocks.map((block, i) => (
-        <div key={i} className="border rounded-md p-3 space-y-2 bg-gray-50">
+        <div key={i} className="border rounded-md p-3 space-y-2 bg-muted/50">
           <div className="flex flex-wrap items-center gap-2">
             <Select value={block.type} onValueChange={(v) => update(i, { type: v as ContentBlock['type'] })}>
-              <SelectTrigger className="w-36 bg-white">
+              <SelectTrigger className="w-36 bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -142,7 +142,7 @@ export function ContentBlocksEditor({
               </SelectContent>
             </Select>
             {block.type === 'code' && (
-              <Input className="w-36 bg-white" placeholder="Language" value={block.language || ''} onChange={(e) => update(i, { language: e.target.value })} />
+              <Input className="w-36 bg-card" placeholder="Language" value={block.language || ''} onChange={(e) => update(i, { language: e.target.value })} />
             )}
             {showCategory && block.type === 'html' && (
               <CheckboxField label="Show “open in new page”" checked={!!block.category} onChange={(v) => update(i, { category: v })} />
@@ -158,7 +158,7 @@ export function ContentBlocksEditor({
           {block.type === 'text' || block.type === 'code' ? (
             <Textarea
               rows={block.type === 'code' ? 10 : 5}
-              className={`bg-white ${block.type === 'code' ? 'font-mono text-sm' : ''}`}
+              className={`bg-card ${block.type === 'code' ? 'font-mono text-sm' : ''}`}
               placeholder={block.type === 'text' ? 'Markdown supported' : 'Paste code here'}
               value={block.content}
               onChange={(e) => update(i, { content: e.target.value })}
@@ -168,7 +168,7 @@ export function ContentBlocksEditor({
               <UrlOrUpload value={block.content.startsWith('<') ? '' : block.content} accept={acceptFor.html} onChange={(v) => update(i, { content: v })} preview={false} />
               <Textarea
                 rows={4}
-                className="bg-white font-mono text-xs"
+                className="bg-card font-mono text-xs"
                 placeholder="…or paste inline HTML (runs in a sandbox)"
                 value={block.content.startsWith('<') ? block.content : ''}
                 onChange={(e) => update(i, { content: e.target.value })}

@@ -13,6 +13,7 @@ type ProjectDraft = Omit<Project, 'id'> & { id?: string };
 
 const emptyProject = (): ProjectDraft => ({
   title: '',
+  slug: '',
   description: '',
   tags: [],
   subtags: [],
@@ -81,6 +82,9 @@ export default function ProjectManagement() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <Field label="Title">
                 <Input value={current.title} onChange={(e) => set('title', e.target.value)} required />
+              </Field>
+              <Field label="URL slug" hint="Leave empty to generate it from the title, e.g. /projects/driver-drowsiness-detection.">
+                <Input value={current.slug} placeholder="auto" onChange={(e) => set('slug', e.target.value)} />
               </Field>
               <Field label="Description">
                 <Textarea rows={4} value={current.description} onChange={(e) => set('description', e.target.value)} />
@@ -171,15 +175,15 @@ export default function ProjectManagement() {
                   {project.title}
                   {project.featured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" aria-label="Featured" />}
                 </h2>
-                <p className="text-gray-600 text-sm line-clamp-2">{project.description}</p>
+                <p className="text-muted-foreground text-sm line-clamp-2">{project.description}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {project.tags.map((tag) => (
-                    <span key={tag} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
+                    <span key={tag} className="bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-0.5 rounded">
                       {tag}
                     </span>
                   ))}
                   {project.subtags.map((tag) => (
-                    <span key={tag} className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
+                    <span key={tag} className="bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-200 text-xs font-semibold px-2 py-0.5 rounded">
                       {tag}
                     </span>
                   ))}

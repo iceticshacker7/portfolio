@@ -1,18 +1,27 @@
-import { useParams, Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, BookOpen, ExternalLink, Github } from 'lucide-react'
 import type { Project } from '@shared/schemas'
 import { useApi } from '@/lib/api'
-import { youtubeId } from '@/lib/content'
+import { projectPath, youtubeId } from '@/lib/content'
 import { ContentBlockView } from './ContentBlockView'
+import { useSeo } from '@/lib/seo'
+import { excerpt } from '@shared/seo'
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: projectData, loading } = useApi<Project | null>(id ? `/projects/${encodeURIComponent(id)}` : null, null)
+  const navigate = useNavigate()
+  // Old links used database ids; move them to the readable URL so search engines see one address.
+  useEffect(() => {
+    if (projectData?.slug && id && id !== projectData.slug) navigate(projectPath(projectData), { replace: true })
+  }, [projectData, id, navigate])
+  useSeo(projectData ? { title: projectData.title, description: excerpt(projectData.description || projectData.title), path: projectPath(projectData), type: 'article' } : null)
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted/50 flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
@@ -22,7 +31,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-xl">
         Project not found
-        <Link to="/projects" className="text-base text-blue-600 hover:underline">Back to Projects</Link>
+        <Link to="/projects" className="text-base text-blue-600 dark:text-blue-400 hover:underline">Back to Projects</Link>
       </div>
     )
   }
@@ -38,13 +47,13 @@ export default function ProjectDetailPage() {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <Link to="/projects" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8">
+        <Link to="/projects" className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mb-8">
           <ArrowLeft className="mr-2" size={20} />
           Back to Projects
         </Link>
 
         <motion.h1
-          className="text-3xl sm:text-4xl font-bold mb-4 text-gray-900"
+          className="text-3xl sm:text-4xl font-bold mb-4 text-foreground"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -59,7 +68,7 @@ export default function ProjectDetailPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           {[...new Set([...projectData.tags, ...projectData.subtags])].map((tag) => (
-            <span key={tag} className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+            <span key={tag} className="bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-200 text-sm font-medium px-2.5 py-0.5 rounded">
               {tag}
             </span>
           ))}
@@ -76,7 +85,7 @@ export default function ProjectDetailPage() {
           />
         )}
 
-        {projectData.description && <p className="text-gray-700 text-lg leading-relaxed mb-8 whitespace-pre-line">{projectData.description}</p>}
+        {projectData.description && <p className="text-foreground/85 text-lg leading-relaxed mb-8 whitespace-pre-line">{projectData.description}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <motion.div
@@ -84,7 +93,7 @@ export default function ProjectDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">Project Demo</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Project Demo</h2>
             {videoId ? (
               <iframe
                 className="w-full aspect-video rounded-lg shadow-md"
@@ -94,7 +103,7 @@ export default function ProjectDetailPage() {
                 allowFullScreen
               ></iframe>
             ) : (
-              <p className="text-gray-600 italic">No demo video available</p>
+              <p className="text-muted-foreground italic">No demo video available</p>
             )}
           </motion.div>
 
@@ -103,11 +112,11 @@ export default function ProjectDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">Quick Links</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Quick Links</h2>
             <div className="space-y-4">
-              {links.length === 0 && <p className="text-gray-600 italic">No links yet</p>}
+              {links.length === 0 && <p className="text-muted-foreground italic">No links yet</p>}
               {links.map(({ href, label, Icon }) => (
-                <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-600 hover:text-blue-800">
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                   <Icon className="mr-2" size={20} />
                   {label}
                 </a>
@@ -124,7 +133,7 @@ export default function ProjectDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
           >
-            {section.title && <h2 className="text-2xl font-semibold mb-4 text-gray-800">{section.title}</h2>}
+            {section.title && <h2 className="text-2xl font-semibold mb-4 text-foreground">{section.title}</h2>}
             {section.content.map((block, contentIndex) => (
               <div key={contentIndex} className="mb-4">
                 <ContentBlockView block={block} />

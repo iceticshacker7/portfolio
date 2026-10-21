@@ -29,3 +29,12 @@ export function isUrl(value: string) {
 export function uniqueSorted(values: string[]) {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
+
+/** "Full-Stack_Development" → "Full Stack Development" for display; filters keep the raw value. */
+export function prettyTag(tag: string) {
+  return tag.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** Public URLs prefer the readable slug and fall back to the id for older records. */
+export const projectPath = (p: { id: string; slug?: string }) => `/projects/${p.slug || p.id}`;
+export const learningPath = (d: { id: string; slug?: string }) => `/learning/${d.slug || d.id}`;

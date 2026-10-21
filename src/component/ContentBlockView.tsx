@@ -38,12 +38,12 @@ export const Markdown: React.FC<{ children: string }> = ({ children }) => (
       h1: (props) => <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />,
       h2: (props) => <h2 className="text-2xl font-semibold mt-6 mb-3" {...props} />,
       h3: (props) => <h3 className="text-xl font-medium mt-4 mb-2" {...props} />,
-      p: (props) => <p className="text-gray-700 leading-relaxed mb-4" {...props} />,
+      p: (props) => <p className="text-foreground/85 leading-relaxed mb-4" {...props} />,
       ul: (props) => <ul className="list-disc pl-6 mb-4" {...props} />,
       ol: (props) => <ol className="list-decimal pl-6 mb-4" {...props} />,
       li: (props) => <li className="mb-2" {...props} />,
-      blockquote: (props) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-4" {...props} />,
-      a: (props) => <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+      blockquote: (props) => <blockquote className="border-l-4 border-input pl-4 italic my-4" {...props} />,
+      a: (props) => <a className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
       code: ({ className, children, ...props }) => {
         const match = /language-(\w+)/.exec(className || "");
         return match ? (
@@ -51,7 +51,7 @@ export const Markdown: React.FC<{ children: string }> = ({ children }) => (
             {String(children).replace(/\n$/, "")}
           </SyntaxHighlighter>
         ) : (
-          <code className="bg-gray-100 rounded px-1 py-0.5" {...props}>
+          <code className="bg-muted rounded px-1 py-0.5" {...props}>
             {children}
           </code>
         );
@@ -139,13 +139,13 @@ export const ContentBlockView: React.FC<{ block: ContentBlock; zoomableImages?: 
       return block.content ? <HtmlBlock block={block} /> : null;
     case "notebook":
       return (
-        <div className="bg-gray-100 p-4 rounded-lg">
+        <div className="bg-muted p-4 rounded-lg">
           <h4 className="text-lg font-semibold mb-2 flex items-center">
             <FileCode className="h-5 w-5 mr-2" />
             Jupyter Notebook
           </h4>
           {isUrl(block.content) ? (
-            <a href={block.content} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+            <a href={block.content} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline break-all">
               Open notebook
             </a>
           ) : (

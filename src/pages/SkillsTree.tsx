@@ -1,37 +1,29 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import type { SkillCategory as Skill } from '@shared/schemas'
 import { useSkills } from '@/lib/useSkills'
 import { SkillIconView } from '@/lib/icons'
+import PageHeader, { PageShell } from '@/component/PageHeader'
+import { useStaticSeo } from '@/lib/seo'
 
-const SkillCategory: React.FC<{ skill: Skill; index: number }> = ({ skill, index }) => {
+function SkillCategory({ skill, index }: { skill: Skill; index: number }) {
   return (
-    <motion.div 
-      className=" rounded-lg  p-6 flex flex-col items-center transform transition-all hover:scale-105"
-      initial={{ opacity: 0, y: 50 }}
+    <motion.div
+      className="h-full rounded-2xl border border-border bg-card p-6 shadow-sm"
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
     >
-      <motion.div 
-        className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-teal-500 to-blue-500 text-white mb-4"
-        whileHover={{ rotate: 360 }}
-        transition={{ duration: 0.5 }}
-      >
-        <SkillIconView icon={skill.icon} className="w-6 h-6" />
-      </motion.div>
-      <h3 className="text-xl font-semibold mb-4 text-center">{skill.name}</h3>
-      <div className="flex flex-wrap justify-center gap-2">
-        {skill.skills.map((item, index) => (
-          <motion.span 
-            key={index} 
-            className="bg-gradient-to-br from-teal-50 to-blue-50 text-gray-800 text-sm font-medium px-3 py-1 rounded-full"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
-            whileHover={{ scale: 1.1 }}
-          >
+      <div className="flex items-center gap-3 mb-4">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+          <SkillIconView icon={skill.icon} className="w-5 h-5" />
+        </span>
+        <h2 className="text-lg font-semibold text-foreground">{skill.name}</h2>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {skill.skills.map((item) => (
+          <span key={item} className="rounded-full border border-border bg-muted/60 px-3 py-1 text-sm text-foreground/85">
             {item}
-          </motion.span>
+          </span>
         ))}
       </div>
     </motion.div>
@@ -39,35 +31,16 @@ const SkillCategory: React.FC<{ skill: Skill; index: number }> = ({ skill, index
 }
 
 export default function SkillsTree() {
+  useStaticSeo('/resume')
   const { skills: skillsData, loading } = useSkills()
   return (
-    <div className="px-4 py-8 sm:p-8 bg-gradient-to-br from-white to-gray-50 font-mono">
-      <div className="max-w-6xl mx-auto">
-        <motion.h2 
-          className="text-3xl sm:text-4xl text-black font-bold mb-2 text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          Skills
-        </motion.h2>
-        <motion.p 
-          className="text-gray-600 mb-8 text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          My Expertise and Skillset
-        </motion.p>
-          
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-48 rounded-lg bg-gray-100 animate-pulse" />)
-            : skillsData.map((skill, index) => (
-                <SkillCategory key={skill.id} skill={skill} index={index} />
-              ))}
-        </div>
+    <PageShell>
+      <PageHeader eyebrow="Toolkit" title="Skills" subtitle="Languages, frameworks, platforms and subjects I work with." />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />)
+          : skillsData.map((skill, index) => <SkillCategory key={skill.id} skill={skill} index={index} />)}
       </div>
-    </div>
+    </PageShell>
   )
 }

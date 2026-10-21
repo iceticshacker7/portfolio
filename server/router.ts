@@ -1,10 +1,11 @@
 import type { ServerResponse } from "node:http";
 import { ObjectId, type Filter, type Document } from "mongodb";
 import { ZodError } from "zod";
-import { collections, contactSchema, profileSchema, syncRequestSchema, type CollectionName } from "../shared/schemas.js";
+import { collections, contactSchema, profileSchema, slugify, syncRequestSchema, type CollectionName } from "../shared/schemas.js";
 import {
   adminEmails,
   checkPassword,
+  firebaseProjectId,
   clearSession,
   createSession,
   getSession,
@@ -12,6 +13,7 @@ import {
   rateLimit,
   requireAdmin,
   requireSyncToken,
+  verifyFirebaseIdToken,
   verifyGoogleCredential,
 } from "./auth.js";
 import { getBucket, getDb } from "./db.js";
@@ -52,10 +54,29 @@ function collectionParam(name: string): CollectionName {
 
 const newId = () => new ObjectId().toHexString();
 
+// Projects and learning pages are addressable by slug as well as id.
+const slugged = new Set<CollectionName>(["projects", "directories"]);
+
+async function assignSlug(name: CollectionName, data: Record<string, unknown>, id: string) {
+  if (!slugged.has(name)) return data;
+  const learning = data.learningItem as { title?: string } | undefined;
+  const source = String(data.slug || data.title || learning?.title || data.name || "");
+  const base = slugify(source) || id;
+  const db = await getDb();
+  let candidate = base;
+  for (let n = 2; await db.collection<StoredDoc>(name).findOne({ slug: candidate, _id: { $ne: id } }, { projection: { _id: 1 } }); n++) {
+    candidate = `${base}-${n}`;
+  }
+  return { ...data, slug: candidate };
+}
+
 // ---------- Auth ----------
 
 route("GET", "/api/auth/config", async (_req, res) => {
   sendJson(res, 200, {
+    // Sign-in is pointless until someone is allow-listed, so say so explicitly.
+    adminConfigured: adminEmails().length > 0,
+    firebaseEnabled: Boolean(firebaseProjectId()) && adminEmails().length > 0,
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
     passwordEnabled: passwordLoginEnabled(),
   });
@@ -70,6 +91,15 @@ route("POST", "/api/auth/google", async (req, res) => {
   const body = (await readJson(req)) as { credential?: unknown };
   if (typeof body?.credential !== "string") throw new HttpError(400, "credential is required");
   const session = await verifyGoogleCredential(body.credential);
+  await createSession(res, session);
+  sendJson(res, 200, { user: session });
+});
+
+route("POST", "/api/auth/firebase", async (req, res) => {
+  await rateLimit(`login:${clientIp(req)}`, 20, 900);
+  const body = (await readJson(req)) as { idToken?: unknown };
+  if (typeof body?.idToken !== "string") throw new HttpError(400, "idToken is required");
+  const session = await verifyFirebaseIdToken(body.idToken);
   await createSession(res, session);
   sendJson(res, 200, { user: session });
 });
@@ -260,8 +290,9 @@ route("POST", "/api/sync", async (req, res) => {
 
   const db = await getDb();
   const now = new Date();
-  for (const { col, rows } of upserts) {
-    if (!rows.length) continue;
+  for (const { col, rows: parsedRows } of upserts) {
+    if (!parsedRows.length) continue;
+    const rows = await Promise.all(parsedRows.map(async ({ id, data }) => ({ id, data: await assignSlug(col, data, id) })));
     const result = await db.collection<StoredDoc>(col).bulkWrite(
       rows.map(({ id, data }) => ({
         updateOne: {
@@ -300,7 +331,8 @@ route("GET", "/api/:collection", async (req, res, params) => {
 route("GET", "/api/:collection/:id", async (_req, res, params) => {
   const name = collectionParam(params.collection);
   const db = await getDb();
-  const doc = await db.collection<StoredDoc>(name).findOne({ _id: params.id });
+  const filter = slugged.has(name) ? { $or: [{ _id: params.id }, { slug: params.id }] } : { _id: params.id };
+  const doc = await db.collection<StoredDoc>(name).findOne(filter);
   if (!doc) throw new HttpError(404, "Not found");
   sendJson(res, 200, toApi(doc));
 });
@@ -308,9 +340,10 @@ route("GET", "/api/:collection/:id", async (_req, res, params) => {
 route("POST", "/api/:collection", async (req, res, params) => {
   await requireAdmin(req);
   const name = collectionParam(params.collection);
-  const data = collections[name].parse(await readJson(req));
+  const id = newId();
+  const data = await assignSlug(name, collections[name].parse(await readJson(req)), id);
   const db = await getDb();
-  const doc = { _id: newId(), ...data, createdAt: new Date(), updatedAt: new Date() };
+  const doc = { _id: id, ...data, createdAt: new Date(), updatedAt: new Date() };
   await db.collection<StoredDoc>(name).insertOne(doc);
   sendJson(res, 201, toApi(doc));
 });
@@ -318,7 +351,7 @@ route("POST", "/api/:collection", async (req, res, params) => {
 route("PUT", "/api/:collection/:id", async (req, res, params) => {
   await requireAdmin(req);
   const name = collectionParam(params.collection);
-  const data = collections[name].parse(await readJson(req));
+  const data = await assignSlug(name, collections[name].parse(await readJson(req)), params.id);
   const db = await getDb();
   const result = await db
     .collection<StoredDoc>(name)
