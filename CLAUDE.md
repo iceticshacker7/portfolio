@@ -7,7 +7,7 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 
 ## Commands
 - `npm run dev`: API (tsx, :3001) + Vite (:5173, proxies `/api`). Needs `.env` (see `.env.example`).
-- `npm run build`: `tsc -b` (client) + `tsc -p tsconfig.server.json` (api/server/shared/scripts) + `vite build`.
+- `npm run build`: `tsc -b` (client) + `tsc -p tsconfig.server.json` (api/server/shared/scripts) + `vite build` + `tsx scripts/prerender.ts`.
 - `npm run lint`: must stay at 0 errors.
 - `npm run seed` / `npm run migrate:firebase -- --dry`.
 - There's no test suite; verify UI changes in a browser (Playwright/Chromium is available in cloud sessions).
@@ -23,6 +23,10 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 - Content blocks (project sections, learning pages) render through `src/component/ContentBlockView.tsx`. Don't add `dangerouslySetInnerHTML`; HTML goes in sandboxed iframes.
 - Vercel: keep the API as one function. `vercel.json` rewrites `/api/(.*)` → `/api`, because a `[...path]` file only matches one segment outside Next.js.
 
+## Content updates (agents)
+- Playbooks for profile/portfolio/SEO updates live in `docs/agents/` (start at `docs/agents/README.md`); the `portfolio-update` skill points there. Claims come only from `docs/agents/profile-facts.md`; log every content change with old values in `docs/agents/changelog.md`.
+- SEO: `shared/seo.ts` (site settings, per-route meta, Person facts), `src/lib/seo.ts` (`useSeo`/`useStaticSeo`), `scripts/prerender.ts` (runs after `vite build`: per-page HTML with meta + JSON-LD, `app.html` SPA shell, `sitemap.xml`; reads Mongo when `MONGODB_URI` is set). Projects and learning pages have slugs (`/projects/<slug>`, `/learning/<slug>`; ids still resolve). `vercel.json` uses `cleanUrls` and falls back to `/app`.
+
 ## LKH sync
 - `POST /api/sync` / `GET /api/sync/export` (Bearer `SYNC_TOKEN`) bulk-upsert records by caller-chosen id; validated all-or-nothing; logged in `sync_log`. CLI: `npm run sync:push`. Design and payload format: `docs/lkh-sync.md`.
 
@@ -33,3 +37,4 @@ Divyansh Rai's portfolio: a React + Vite + Tailwind SPA with an admin panel, a s
 - The 21 Firebase Storage files were recovered (Oct 2026, after a temporary Blaze upgrade) into `public/media/` (images converted to WebP) and the records re-linked to `/media/...`. `scripts/firebase-storage-missing.json` records the original paths. New uploads from the admin panel go to GridFS.
 - Home-page "Top Contributions" is empty until entries are added in Admin → Contributions (the old placeholder ones were fake).
 - The owner keeps agent notes and memories in a separate local project ("LKH"), which isn't on GitHub. Content from it can be added through the admin panel or the seed data.
+- Open content items (Oct 2026): the resume isn't on the site yet (`profile.resumeUrl` empty); the Brane Enterprises offer entry (`seed-mvhrvz4a-6`) still needs deleting in Admin → Experience; Search Console/Bing verification and enabling Vercel Web Analytics are owner tasks (see `docs/agents/seo-marketing.md`).
