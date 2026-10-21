@@ -8,10 +8,12 @@ import { useApi } from '@/lib/api'
 import { ExternalLink, BookOpen, Search, Tag } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import PageHeader, { PageShell } from '@/component/PageHeader'
-import { prettyTag } from '@/lib/content'
+import { learningPath, prettyTag, projectPath } from '@/lib/content'
+import { useStaticSeo } from '@/lib/seo'
 
 interface BlogItem {
   id: string
+  slug?: string
   title: string
   description?: string
   tags?: string[]
@@ -21,7 +23,7 @@ interface BlogItem {
 
 const BlogCard: React.FC<{ item: BlogItem }> = ({ item }) => {
   return (
-    <Link className="block h-full" to={item.type === 'learning' ? `/learning/${item.id}` : `/projects/${item.id}`}>
+    <Link className="block h-full" to={item.type === 'learning' ? learningPath(item) : projectPath(item)}>
       <Card className="w-full h-full flex flex-col bg-card border border-border rounded-2xl shadow-sm overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-500/30">
         <CardContent className="p-6 flex-1">
           <div className="flex items-center mb-4">
@@ -73,6 +75,7 @@ const ShimmerCard: React.FC = () => {
 }
 
 export default function BlogsPage() {
+  useStaticSeo('/blogs')
   const projects = useApi<Project[]>('/projects', [])
   const directories = useApi<DirectoryItem[]>('/directories', [])
   const loading = projects.loading || directories.loading
@@ -80,10 +83,10 @@ export default function BlogsPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
   const blogItems: BlogItem[] = [
-    ...projects.data.map((p) => ({ id: p.id, title: p.title, description: p.description, tags: p.tags, type: 'project' as const })),
+    ...projects.data.map((p) => ({ id: p.id, slug: p.slug, title: p.title, description: p.description, tags: p.tags, type: 'project' as const })),
     ...directories.data
       .filter((d) => d.type === 'file' && d.learningItem)
-      .map((d) => ({ id: d.id, title: d.learningItem!.title || d.name, keywords: d.learningItem!.keywords, type: 'learning' as const })),
+      .map((d) => ({ id: d.id, slug: d.slug, title: d.learningItem!.title || d.name, keywords: d.learningItem!.keywords, type: 'learning' as const })),
   ]
 
   const filteredBlogItems = blogItems.filter(item => {

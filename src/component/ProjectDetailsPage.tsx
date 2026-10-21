@@ -1,14 +1,23 @@
-import { useParams, Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, BookOpen, ExternalLink, Github } from 'lucide-react'
 import type { Project } from '@shared/schemas'
 import { useApi } from '@/lib/api'
-import { youtubeId } from '@/lib/content'
+import { projectPath, youtubeId } from '@/lib/content'
 import { ContentBlockView } from './ContentBlockView'
+import { useSeo } from '@/lib/seo'
+import { excerpt } from '@shared/seo'
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: projectData, loading } = useApi<Project | null>(id ? `/projects/${encodeURIComponent(id)}` : null, null)
+  const navigate = useNavigate()
+  // Old links used database ids; move them to the readable URL so search engines see one address.
+  useEffect(() => {
+    if (projectData?.slug && id && id !== projectData.slug) navigate(projectPath(projectData), { replace: true })
+  }, [projectData, id, navigate])
+  useSeo(projectData ? { title: projectData.title, description: excerpt(projectData.description || projectData.title), path: projectPath(projectData), type: 'article' } : null)
 
   if (loading) {
     return (

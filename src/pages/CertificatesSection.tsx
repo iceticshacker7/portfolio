@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useApi } from "@/lib/api";
 import { prettyTag, uniqueSorted } from "@/lib/content";
 import PageHeader, { FilterPills, PageShell } from "@/component/PageHeader";
+import { useStaticSeo } from "@/lib/seo";
 
 const ANY = "All";
 
@@ -53,6 +54,7 @@ function CertificateCard({ certificate, onClick }: { certificate: Certificate; o
 }
 
 export default function CertificatesSection() {
+  useStaticSeo("/certificates");
   const { data: certificates, loading, error } = useApi<Certificate[]>("/certificates", []);
   const [activeTag, setActiveTag] = useState(ANY);
   const [selected, setSelected] = useState<Certificate | null>(null);

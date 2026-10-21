@@ -102,6 +102,7 @@ export default function DirectoryManagementPage() {
   const openAdd = (parentId: string | null, type: 'folder' | 'file') =>
     setCurrent({
       name: '',
+      slug: '',
       type,
       parentId,
       featured: false,
@@ -163,6 +164,11 @@ export default function DirectoryManagementPage() {
               <Field label="Name (shown in the topic tree)">
                 <Input value={current.name} onChange={(e) => setCurrent({ ...current, name: e.target.value })} required />
               </Field>
+              {current.type === 'file' && (
+                <Field label="URL slug" hint="Leave empty to generate it from the title.">
+                  <Input value={current.slug} placeholder="auto" onChange={(e) => setCurrent({ ...current, slug: e.target.value })} />
+                </Field>
+              )}
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Sort order">
                   <Input type="number" value={current.order} onChange={(e) => setCurrent({ ...current, order: Number(e.target.value) || 0 })} />

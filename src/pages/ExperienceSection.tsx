@@ -6,6 +6,7 @@ import type { Experience, ExperienceSection as ExperienceSectionName } from '@sh
 import { seedExperience } from '@shared/seed-data'
 import { useApi } from '@/lib/api'
 import PageHeader, { PageShell } from '@/component/PageHeader'
+import { useStaticSeo } from '@/lib/seo'
 
 const sections: { id: ExperienceSectionName; icon: typeof GraduationCap }[] = [
   { id: 'Academic', icon: GraduationCap },
@@ -15,6 +16,7 @@ const sections: { id: ExperienceSectionName; icon: typeof GraduationCap }[] = [
 ]
 
 export default function ExperienceSection() {
+  useStaticSeo('/experience')
   const [activeSection, setActiveSection] = useState<ExperienceSectionName>('Academic')
   const { data, loading, error } = useApi<Experience[]>('/experience', [])
   const entries = error ? seedExperience.map((e, i) => ({ ...e, id: `seed-${i}` })) : data

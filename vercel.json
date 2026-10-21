@@ -8,7 +8,7 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/app"
     }
   ],
   "headers": [
@@ -68,5 +68,7 @@
         }
       ]
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
 }

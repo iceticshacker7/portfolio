@@ -27,7 +27,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label={`${profile.name}, home`}>
             <img src={profile.avatar} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-blue-500/30" />
-            <span className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+            <span className="text-lg font-bold tracking-tight text-foreground">
               {profile.name || "Portfolio"}
             </span>
           </Link>
@@ -44,9 +44,9 @@ export default function Header() {
             <ThemeToggle />
             <button
               onClick={() => setIsContactModalOpen(true)}
-              className="hidden sm:inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="hidden sm:inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Contact Me
+              Contact
             </button>
             <button
               type="button"
@@ -72,13 +72,13 @@ export default function Header() {
             ))}
             <button
               type="button"
-              className="mt-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400"
+              className="mt-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500"
               onClick={() => {
                 setIsMenuOpen(false);
                 setIsContactModalOpen(true);
               }}
             >
-              Contact Me
+              Contact
             </button>
           </nav>
         </div>

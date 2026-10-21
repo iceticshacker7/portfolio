@@ -12,6 +12,27 @@ const text = (max = 500) => z.string().trim().max(max);
 const list = (max = 50, itemMax = 200) => z.array(text(itemMax)).max(max).default([]);
 const order = z.number().int().min(-100000).max(100000).default(0);
 
+// URL-friendly id used in /projects/<slug> and /learning/<slug>. Empty means "derive it from
+// the title" (the API fills it in and keeps it unique).
+const slug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(100)
+  .refine((v) => v === "" || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v), "Use lowercase letters, digits and single hyphens")
+  .default("");
+
+export function slugify(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80)
+    .replace(/-+$/g, "");
+}
+
 export const contentTypes = ["text", "image", "gif", "notebook", "code", "html"] as const;
 
 // "content" holds markdown for text, source for code, inline HTML or a URL for
@@ -26,6 +47,7 @@ export const contentBlock = z.object({
 
 export const projectSchema = z.object({
   title: text(200).min(1),
+  slug,
   description: text(5000).default(""),
   tags: list(),
   subtags: list(),
@@ -59,6 +81,7 @@ export const certificateSchema = z.object({
 
 export const directorySchema = z.object({
   name: text(200).min(1),
+  slug,
   type: z.enum(["folder", "file"]),
   parentId: z.string().max(64).nullable().default(null),
   featured: z.boolean().default(false),

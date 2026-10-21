@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { DirectoryItem } from "@shared/schemas";
 import { useApi } from "@/lib/api";
-import { buildDirectoryTree } from "@/lib/content";
+import { buildDirectoryTree, learningPath } from "@/lib/content";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronRight,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Link, useSearchParams } from "react-router-dom";
 import PageHeader, { PageShell } from "@/component/PageHeader";
+import { useStaticSeo } from "@/lib/seo";
 
 const ShimmerCard: React.FC = () => {
   return (
@@ -124,7 +125,7 @@ const DirectoryItemView: React.FC<{
         <div className="flex items-center py-1">
           <File className="h-4 w-4 text-muted-foreground/70 mr-2" />
           <Link
-            to={`/learning/${item.id}`}
+            to={learningPath(item)}
             className="text-sm hover:text-blue-500 hover:underline transition-colors"
           >
             {item.name}
@@ -191,13 +192,14 @@ const ItemCard: React.FC<{ item: DirectoryItem; onClick: () => void }> = ({
   );
 
   return item.type === "file" ? (
-    <Link to={`/learning/${item.id}`}>{cardContent}</Link>
+    <Link to={learningPath(item)}>{cardContent}</Link>
   ) : (
     <div onClick={onClick}>{cardContent}</div>
   );
 };
 
 const HierarchicalLearningTags: React.FC = () => {
+  useStaticSeo("/learnings");
   const { data: items, loading } = useApi<DirectoryItem[]>("/directories", []);
   // The open folder lives in the URL (?folder=id) so it survives reloads and can be linked.
   const [searchParams, setSearchParams] = useSearchParams();

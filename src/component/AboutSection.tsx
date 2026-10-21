@@ -62,13 +62,13 @@ export default function AboutSection({ contact }: { contact: () => void }) {
         {(about.ctaTitle || about.ctaText) && (
           <motion.div
             {...reveal}
-            className="mt-14 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 px-6 py-10 sm:px-12 text-center text-white shadow-lg"
+            className="mt-14 rounded-2xl bg-slate-900 dark:bg-card dark:border dark:border-border px-6 py-10 sm:px-12 text-center text-white shadow-lg"
           >
             {about.ctaTitle && <h3 className="text-2xl font-bold">{about.ctaTitle}</h3>}
-            {about.ctaText && <p className="mt-3 max-w-2xl mx-auto text-white/90">{about.ctaText}</p>}
+            {about.ctaText && <p className="mt-3 max-w-2xl mx-auto text-slate-300">{about.ctaText}</p>}
             <button
               onClick={contact}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-blue-700 shadow hover:bg-blue-50"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               <Mail className="h-4 w-4" /> Get in touch
             </button>

@@ -13,6 +13,7 @@ type ProjectDraft = Omit<Project, 'id'> & { id?: string };
 
 const emptyProject = (): ProjectDraft => ({
   title: '',
+  slug: '',
   description: '',
   tags: [],
   subtags: [],
@@ -81,6 +82,9 @@ export default function ProjectManagement() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <Field label="Title">
                 <Input value={current.title} onChange={(e) => set('title', e.target.value)} required />
+              </Field>
+              <Field label="URL slug" hint="Leave empty to generate it from the title, e.g. /projects/driver-drowsiness-detection.">
+                <Input value={current.slug} placeholder="auto" onChange={(e) => set('slug', e.target.value)} />
               </Field>
               <Field label="Description">
                 <Textarea rows={4} value={current.description} onChange={(e) => set('description', e.target.value)} />

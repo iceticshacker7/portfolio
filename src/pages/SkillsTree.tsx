@@ -3,6 +3,7 @@ import type { SkillCategory as Skill } from '@shared/schemas'
 import { useSkills } from '@/lib/useSkills'
 import { SkillIconView } from '@/lib/icons'
 import PageHeader, { PageShell } from '@/component/PageHeader'
+import { useStaticSeo } from '@/lib/seo'
 
 function SkillCategory({ skill, index }: { skill: Skill; index: number }) {
   return (
@@ -30,6 +31,7 @@ function SkillCategory({ skill, index }: { skill: Skill; index: number }) {
 }
 
 export default function SkillsTree() {
+  useStaticSeo('/resume')
   const { skills: skillsData, loading } = useSkills()
   return (
     <PageShell>

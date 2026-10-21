@@ -14,7 +14,7 @@ export default function Footer() {
           <div>
             <Link to="/" className="inline-flex items-center gap-3">
               <img src={profile.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
-              <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+              <span className="text-xl font-bold tracking-tight text-foreground">
                 {profile.name}
               </span>
             </Link>

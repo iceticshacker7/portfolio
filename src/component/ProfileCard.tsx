@@ -6,12 +6,13 @@ import type { Achievement, Certificate, Contribution, DirectoryItem, Project, Sk
 import { seedAchievements } from "@shared/seed-data";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useApi } from "@/lib/api";
-import { prettyTag } from "@/lib/content";
+import { learningPath, prettyTag, projectPath } from "@/lib/content";
 import { useProfile } from "@/lib/profile";
 import { useSkills } from "@/lib/useSkills";
 import { SkillIconView, socialIconMap } from "@/lib/icons";
 import AboutSection from "./AboutSection";
 import ContactMeModal from "./ContactMeModal";
+import { useStaticSeo } from "@/lib/seo";
 
 /** Featured items first; if nothing is marked featured yet, show the first few so the section isn't empty. */
 function useFeatured<T extends { featured?: boolean }>(path: string, limit: number) {
@@ -54,7 +55,7 @@ function Section({
         <motion.div {...reveal} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
           <div>
             <h2 className="flex items-center gap-2.5 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-teal-400 text-white shadow-sm">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 {icon}
               </span>
               {title}
@@ -116,16 +117,16 @@ function SkillCard({ skill, index }: { skill: Skill; index: number }) {
 function ProjectCard({ project }: { project: Project }) {
   return (
     <article className={`${card} flex flex-col overflow-hidden`}>
-      <Link to={`/projects/${project.id}`} className="block aspect-[16/10] overflow-hidden bg-muted" tabIndex={-1} aria-hidden="true">
+      <Link to={projectPath(project)} className="block aspect-[16/10] overflow-hidden bg-muted" tabIndex={-1} aria-hidden="true">
         {project.image ? (
           <img src={project.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-blue-500/20 to-teal-400/20" />
+          <div className="h-full w-full bg-muted" />
         )}
       </Link>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="text-base font-semibold text-foreground leading-snug">
-          <Link to={`/projects/${project.id}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+          <Link to={projectPath(project)} className="hover:text-blue-600 dark:hover:text-blue-400">
             {project.title}
           </Link>
         </h3>
@@ -136,7 +137,7 @@ function ProjectCard({ project }: { project: Project }) {
           ))}
         </div>
         <div className="mt-4 flex items-center gap-4 text-sm font-medium">
-          <Link to={`/projects/${project.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+          <Link to={projectPath(project)} className="text-blue-600 dark:text-blue-400 hover:underline">
             Read case study
           </Link>
           {project.liveUrl && (
@@ -198,7 +199,7 @@ function CertificateCard({ certificate, onOpen }: { certificate: Certificate; on
 
 function LearningCard({ item }: { item: DirectoryItem }) {
   return (
-    <Link to={`/learning/${item.id}`} className={`${card} flex flex-col p-6`}>
+    <Link to={learningPath(item)} className={`${card} flex flex-col p-6`}>
       <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 mb-4">
         <BookOpen className="h-5 w-5" />
       </span>
@@ -239,6 +240,7 @@ function ContributionCard({ contribution }: { contribution: Contribution }) {
 }
 
 export default function EnhancedPortfolio() {
+  useStaticSeo("/");
   const { profile } = useProfile();
   const navigate = useNavigate();
   const [typedText, setTypedText] = useState("");
@@ -284,8 +286,8 @@ export default function EnhancedPortfolio() {
               <Sparkles className="h-3.5 w-3.5 text-blue-500" /> Open to AI/ML opportunities
             </p>
             <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-              Hi, I'm{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">{profile.name}</span>
+              <span className="block text-lg sm:text-xl font-medium text-muted-foreground mb-2">Hi, I'm</span>
+              {profile.name}
             </h1>
             <p className="mt-4 text-lg sm:text-xl font-medium text-foreground/80 min-h-[1.75rem]" aria-label={fullText}>
               {typedText}
@@ -303,9 +305,9 @@ export default function EnhancedPortfolio() {
             <div className="mt-8 flex flex-wrap justify-center md:justify-start gap-3">
               <button
                 onClick={() => setIsContactModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:from-blue-600 hover:to-teal-500 shadow-md"
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-md"
               >
-                <Mail className="h-4 w-4" /> Hire me
+                <Mail className="h-4 w-4" /> Get in touch
               </button>
               <Link to="/projects" className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted">
                 View projects <ArrowRight className="h-4 w-4" />
@@ -346,8 +348,7 @@ export default function EnhancedPortfolio() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="relative mx-auto w-56 sm:w-72 md:w-80 aspect-square"
           >
-            <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 opacity-25 blur-2xl" aria-hidden="true" />
-            <div className="relative h-full w-full rounded-full p-1.5 bg-gradient-to-br from-blue-500 to-teal-400 shadow-xl">
+            <div className="relative h-full w-full rounded-full p-1 bg-border shadow-xl">
               <img src={profile.avatar} alt={profile.name} className="h-full w-full rounded-full object-cover border-4 border-background" />
             </div>
           </motion.div>

@@ -91,7 +91,7 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
           >
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 id="contact-title" className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+                <h2 id="contact-title" className="text-2xl sm:text-3xl font-bold text-foreground">
                   Let's Connect
                 </h2>
                 <p className="text-muted-foreground mt-2">
@@ -150,9 +150,7 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
                 </div>
 
                 <motion.div
-                  className="bg-gradient-to-r from-blue-500 to-teal-400 rounded-lg p-6 text-white"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
+                  className="rounded-lg border border-border bg-muted/50 p-6 text-foreground"
                 >
                   <h3 className="text-xl font-semibold mb-2">Why Work With Me?</h3>
                   <ul className="list-disc list-inside space-y-2">
@@ -219,9 +217,7 @@ export default function ContactMeModal({ isOpen, onClose }: ContactMeModalProps)
                   <motion.button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-blue-500 to-teal-400 text-white font-bold py-3 px-4 rounded-md hover:from-blue-600 hover:to-teal-500 transition-all duration-300 flex items-center justify-center"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-md transition-colors flex items-center justify-center disabled:opacity-70"
                   >
                     {isSubmitting ? (
                       <Loader className="animate-spin mr-2" size={20} />

@@ -1,10 +1,14 @@
-import { useParams, Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { DirectoryItem, LearningItem } from '@shared/schemas'
 import { useApi } from '@/lib/api'
+import { learningPath } from '@/lib/content'
 import { ContentBlockView } from './ContentBlockView'
+import { useSeo } from '@/lib/seo'
+import { excerpt } from '@shared/seo'
 
 const LearningContent: React.FC<{ item: LearningItem; fallbackTitle: string }> = ({ item, fallbackTitle }) => {
   return (
@@ -51,6 +55,13 @@ export default function LearningContentPage() {
   const { data: directoryItem, loading } = useApi<DirectoryItem | null>(id ? `/directories/${encodeURIComponent(id)}` : null, null)
   // The full list is small and gives us the folder path for the breadcrumbs.
   const { data: allItems } = useApi<DirectoryItem[]>('/directories', [])
+  const firstText = directoryItem?.learningItem?.content.find((b) => b.type === 'text')?.content || ''
+  const navigate = useNavigate()
+  // Old links used database ids; move them to the readable URL so search engines see one address.
+  useEffect(() => {
+    if (directoryItem?.slug && id && id !== directoryItem.slug) navigate(learningPath(directoryItem), { replace: true })
+  }, [directoryItem, id, navigate])
+  useSeo(directoryItem ? { title: directoryItem.learningItem?.title || directoryItem.name, description: excerpt(firstText || directoryItem.name), path: learningPath(directoryItem), type: 'article' } : null)
 
   const ancestors: DirectoryItem[] = []
   const byId = new Map(allItems.map((d) => [d.id, d]))
@@ -61,7 +72,7 @@ export default function LearningContentPage() {
     { name: 'Home', path: '/' },
     { name: 'Learning', path: '/learnings' },
     ...ancestors.map((a) => ({ name: a.name, path: `/learnings?folder=${a.id}` })),
-    ...(directoryItem ? [{ name: directoryItem.name, path: `/learning/${directoryItem.id}` }] : []),
+    ...(directoryItem ? [{ name: directoryItem.name, path: learningPath(directoryItem) }] : []),
   ]
 
   return (

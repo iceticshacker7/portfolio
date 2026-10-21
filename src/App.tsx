@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { BrowserRouter as Router, Link, Navigate, Route, Routes } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import Header from "./component/Header";
@@ -8,6 +9,7 @@ import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, RequireAdmin } from "./lib/auth";
 import { ProfileProvider } from "./lib/profile";
 import { ThemeProvider } from "./lib/theme";
+import { useSeo } from "./lib/seo";
 
 // Route-level code splitting: the home page loads first, everything else on demand.
 const ExperienceSection = lazy(() => import("./pages/ExperienceSection"));
@@ -33,7 +35,9 @@ const PageLoader = () => (
   </div>
 );
 
-const NotFound = () => (
+const NotFound = () => {
+  useSeo({ title: "Page not found", description: "This page doesn't exist.", path: "/404", noindex: true });
+  return (
   <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 font-mono">
     <h1 className="text-4xl font-bold">404</h1>
     <p className="text-muted-foreground">This page doesn't exist.</p>
@@ -41,7 +45,8 @@ const NotFound = () => (
       Go home
     </Link>
   </div>
-);
+  );
+};
 
 export default function App() {
   return (
@@ -92,6 +97,8 @@ export default function App() {
             </main>
             <Footer />
             <Toaster />
+            {/* Page views for Vercel Web Analytics (enable it in the Vercel dashboard); no cookies. */}
+            <Analytics />
           </div>
         </ProfileProvider>
       </AuthProvider>

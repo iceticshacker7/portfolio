@@ -9,7 +9,7 @@ interface SectionItemProps {
 export default function SectionItem({ title, description, institution, dateRange }: SectionItemProps) {
   return (
     <div className="relative">
-      <span className="absolute -left-[41px] top-5 h-4 w-4 rounded-full border-4 border-background bg-gradient-to-br from-blue-500 to-teal-400" aria-hidden="true" />
+      <span className="absolute -left-[41px] top-5 h-4 w-4 rounded-full border-4 border-background bg-blue-600 dark:bg-blue-500" aria-hidden="true" />
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
           <h3 className="text-base sm:text-lg font-semibold text-foreground leading-snug">{title}</h3>

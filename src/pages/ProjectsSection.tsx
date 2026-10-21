@@ -4,19 +4,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ExternalLink, Github } from 'lucide-react'
 import type { Project } from '@shared/schemas'
 import { useApi } from '@/lib/api'
-import { prettyTag, uniqueSorted } from '@/lib/content'
+import { prettyTag, projectPath, uniqueSorted } from '@/lib/content'
 import PageHeader, { FilterPills, PageShell } from '@/component/PageHeader'
+import { useStaticSeo } from '@/lib/seo'
 
 const ANY = 'All'
 
 function ProjectCard({ project }: { project: Project }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-500/30">
-      <Link to={`/projects/${project.id}`} className="block aspect-[16/10] overflow-hidden bg-muted" tabIndex={-1} aria-hidden="true">
+      <Link to={projectPath(project)} className="block aspect-[16/10] overflow-hidden bg-muted" tabIndex={-1} aria-hidden="true">
         {project.image ? (
           <img src={project.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-blue-500/20 to-teal-400/20" />
+          <div className="h-full w-full bg-muted" />
         )}
       </Link>
       <div className="flex flex-1 flex-col p-5">
@@ -28,13 +29,13 @@ function ProjectCard({ project }: { project: Project }) {
           ))}
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">
-          <Link to={`/projects/${project.id}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+          <Link to={projectPath(project)} className="hover:text-blue-600 dark:hover:text-blue-400">
             {project.title}
           </Link>
         </h2>
         <p className="mt-2 flex-1 text-sm text-muted-foreground line-clamp-3">{project.description}</p>
         <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-sm font-medium">
-          <Link to={`/projects/${project.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+          <Link to={projectPath(project)} className="text-blue-600 dark:text-blue-400 hover:underline">
             Read case study
           </Link>
           <div className="flex items-center gap-3 text-muted-foreground">
@@ -56,6 +57,7 @@ function ProjectCard({ project }: { project: Project }) {
 }
 
 export default function ProjectsSection() {
+  useStaticSeo('/projects')
   const { data: projects, loading, error } = useApi<Project[]>('/projects', [])
   const [activeTag, setActiveTag] = useState(ANY)
   const [activeSubtag, setActiveSubtag] = useState<string | null>(null)

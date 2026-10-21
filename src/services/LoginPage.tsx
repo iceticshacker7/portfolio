@@ -7,6 +7,7 @@ import { KeyRound, Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { firebaseConfigured, signInWithGoogleViaFirebase } from '@/lib/firebaseSignIn'
 import { useAuth, type AdminUser } from '@/lib/auth'
+import { useSeo } from '@/lib/seo'
 
 interface AuthConfig {
   adminConfigured: boolean
@@ -38,6 +39,7 @@ function loadGoogleScript(): Promise<void> {
 }
 
 export default function LoginPage() {
+  useSeo({ title: 'Admin sign in', description: 'Admin sign in', path: '/login', noindex: true })
   const { user, loading, setUser } = useAuth()
   const location = useLocation()
   const [config, setConfig] = useState<AuthConfig | null>(null)
