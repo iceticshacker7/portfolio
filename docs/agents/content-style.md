@@ -1,6 +1,6 @@
 # Content style
 
-How copy on divyanshrai.co should read. The goal: a recruiter or hiring manager understands in 10 seconds what Divyansh does, what Divyansh has built and why it's credible.
+How copy on divyansh-rai.vercel.app should read. The goal: a recruiter or hiring manager understands in 10 seconds what Divyansh does, what Divyansh has built and why it's credible.
 
 ## Voice
 

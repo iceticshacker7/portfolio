@@ -1,7 +1,7 @@
 // Push a sync payload (JSON file) to the portfolio API. Used by the LKH agent;
 // see docs/lkh-sync.md for the payload format.
 //
-//   SYNC_URL=https://divyanshrai.co SYNC_TOKEN=... npm run sync:push -- payload.json [--dry]
+//   SYNC_URL=https://divyansh-rai.vercel.app SYNC_TOKEN=... npm run sync:push -- payload.json [--dry]
 //   npm run sync:push -- --export > current.json     # download what's live now
 import { readFileSync } from "node:fs";
 

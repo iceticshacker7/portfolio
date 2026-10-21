@@ -1,6 +1,6 @@
 # Agent playbooks
 
-Markdown instructions for agents (Claude Code sessions, the LKH sync agent, scheduled tasks) that keep divyanshrai.co current. A person can follow them too. Start here, then open the playbook for the job.
+Markdown instructions for agents (Claude Code sessions, the LKH sync agent, scheduled tasks) that keep divyansh-rai.vercel.app current. A person can follow them too. Start here, then open the playbook for the job.
 
 | File | Use it to |
 |---|---|
@@ -37,7 +37,7 @@ All site content is in MongoDB Atlas, database `portfolio`. Shapes and limits ar
 
 Ways to write, in order of preference:
 
-1. **Sync API** (best for agents): `POST https://divyanshrai.co/api/sync` with `Authorization: Bearer $SYNC_TOKEN`. It's validated all-or-nothing and logged in `sync_log`. Payload format: [`docs/lkh-sync.md`](../lkh-sync.md). CLI: `SYNC_URL=https://divyanshrai.co npm run sync:push -- payload.json --dry`. Note: `profile` in a sync payload **replaces** the whole profile, so export first (`npm run sync:push -- --export`), edit the export, then send it back.
+1. **Sync API** (best for agents): `POST https://divyansh-rai.vercel.app/api/sync` with `Authorization: Bearer $SYNC_TOKEN`. It's validated all-or-nothing and logged in `sync_log`. Payload format: [`docs/lkh-sync.md`](../lkh-sync.md). CLI: `SYNC_URL=https://divyansh-rai.vercel.app npm run sync:push -- payload.json --dry`. Note: `profile` in a sync payload **replaces** the whole profile, so export first (`npm run sync:push -- --export`), edit the export, then send it back.
 2. **Admin panel** at `/admin` (Google sign-in, allow-listed email). Best for the owner's quick edits and file uploads.
 3. **MongoDB Atlas connector** (Claude sessions with the MongoDB MCP server): `update-many` on the collections above. Use `$set` on specific fields, never replace whole documents.
 

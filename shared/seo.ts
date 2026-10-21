@@ -1,7 +1,10 @@
 // SEO settings shared by the browser (per-page <head> updates) and the build-time
 // prerender script, so both always produce the same titles, descriptions and URLs.
 
-export const SITE_URL = "https://divyanshrai.co";
+// The site's public address, used for canonical URLs, the sitemap and social cards.
+// divyanshrai.co isn't pointing at Vercel right now, so the Vercel production domain is
+// the canonical one. When a custom domain works, change this line and redeploy.
+export const SITE_URL = "https://divyansh-rai.vercel.app";
 export const SITE_NAME = "Divyansh Rai";
 export const DEFAULT_IMAGE = "/og-image.png";
 export const DEFAULT_DESCRIPTION =

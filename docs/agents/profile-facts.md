@@ -9,7 +9,7 @@ Last reviewed: 2026-10-21. **Resume not yet added.** When it is (Admin → Profi
 | Fact | Source |
 |---|---|
 | Name: Divyansh Rai (initials DR) | profile |
-| Site: https://divyanshrai.co | Vercel |
+| Site: https://divyansh-rai.vercel.app | Vercel |
 | GitHub: https://github.com/iceticshacker7 · LinkedIn: https://www.linkedin.com/in/divyanshrai7 · Kaggle: https://kaggle.com/divyanshrai7 | profile.socials |
 | LeetCode: https://leetcode.com/divyanshrai7 · Codeforces: https://codeforces.com/profile/dedicatedaf | learning page "Algorithmic Proficiency" |
 | Current headline: "AI/ML Graduate \| Systems Engineer @TCS" | owner, Oct 2026 |

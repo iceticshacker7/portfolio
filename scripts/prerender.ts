@@ -92,6 +92,7 @@ function head(meta: PageMeta, jsonLd: object[]) {
   return `<title>${title}</title>
     <meta name="description" content="${desc}" />
     <meta name="robots" content="${meta.noindex ? "noindex" : "index, follow, max-image-preview:large"}" />
+    ${meta.path === "/" && process.env.GOOGLE_SITE_VERIFICATION ? `<meta name="google-site-verification" content="${esc(process.env.GOOGLE_SITE_VERIFICATION)}" />` : ""}
     <link rel="canonical" href="${url}" />
     <meta property="og:site_name" content="${esc(SITE_NAME)}" />
     <meta property="og:title" content="${title}" />
@@ -201,5 +202,9 @@ ${pages
 </urlset>
 `;
 writeFileSync(join(DIST, "sitemap.xml"), sitemap);
+writeFileSync(
+  join(DIST, "robots.txt"),
+  `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /login\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`,
+);
 copyFileSync(join(DIST, "app.html"), join(DIST, "404.html"));
-console.log(`prerender: wrote ${pages.length} pages + sitemap.xml`);
+console.log(`prerender: wrote ${pages.length} pages + sitemap.xml + robots.txt`);
