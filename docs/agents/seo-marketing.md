@@ -9,13 +9,18 @@
 - **Client-side updates:** `useSeo` (`src/lib/seo.ts`) keeps tags right during in-app navigation. Settings live in `shared/seo.ts`.
 - **Vercel Web Analytics:** wired in (`@vercel/analytics`). It also has to be enabled in the Vercel dashboard: Project → Analytics → Enable.
 
+## Domain
+
+- **https://divyanshrai.in** is the site's address (`SITE_URL` in `shared/seo.ts`). Registered at **Spaceship** (Oct 2026); keep auto-renew on.
+- DNS at Spaceship: `A  @  216.198.79.1` and `CNAME  www  c92395500bcbb74f.vercel-dns-017.com` (values from Vercel → Project → Domains; re-check there if Vercel changes them).
+- In Vercel, `www.divyanshrai.in` redirects (308) to the apex. `divyansh-rai.vercel.app` should also redirect (308) to `divyanshrai.in` once the domain resolves, so old links keep their value.
+- `divyanshrai.co` (lapsed, not owned) is still listed on the Vercel project and can be removed.
+
 ## One-time setup (owner)
 
-The site's address is **https://divyansh-rai.vercel.app** (`SITE_URL` in `shared/seo.ts`). divyanshrai.co isn't owned right now; see "Moving to a custom domain" below.
-
-1. **Google Search Console:** Add property → **URL prefix** → `https://divyansh-rai.vercel.app/`. (A `vercel.app` address can't use DNS verification.) Choose the **HTML tag** method and copy the `content="…"` value. In Vercel → Project → Settings → Environment Variables, add `GOOGLE_SITE_VERIFICATION` = that value (Production), redeploy, then click Verify. Submit `https://divyansh-rai.vercel.app/sitemap.xml`, and use URL Inspection → Request indexing on `/` and the 3 featured projects.
+1. **Google Search Console:** Add property → **Domain** → `divyanshrai.in`, and verify with the TXT record Google shows (add it in Spaceship → DNS). Submit `https://divyanshrai.in/sitemap.xml`, then use URL Inspection → Request indexing on `/` and the 3 featured projects. (If you already verified the vercel.app address, keep it; Search Console's Change of Address tool isn't needed for a 308 redirect.) The `GOOGLE_SITE_VERIFICATION` env var still works if you prefer the HTML-tag method.
 2. **Bing Webmaster Tools:** import from Search Console (one click).
-3. **Firebase Auth:** add `divyansh-rai.vercel.app` under Authentication → Settings → Authorized domains, or admin Google sign-in fails on this address.
+3. **Firebase Auth:** add `divyanshrai.in` under Authentication → Settings → Authorized domains, or admin Google sign-in fails on the new address.
 4. **Link the site everywhere** (backlinks are the strongest ranking signal for a name query):
    - LinkedIn: Contact info → Website, Featured section, headline.
    - GitHub: profile README and the website field; each project repo's "About" link pointing to `/projects/<slug>`.
@@ -23,12 +28,12 @@ The site's address is **https://divyansh-rai.vercel.app** (`SITE_URL` in `shared
    - Hugging Face Space README for the Olympics dashboard.
    - Email signature and resume header.
 
-## Moving to a custom domain later
+## Moving to another domain later
 
 1. Buy the domain and add it in Vercel → Project → Domains. Set the DNS records Vercel shows.
-2. Change `SITE_URL` in `shared/seo.ts` and the `og:image` URL in `index.html`, then deploy.
-3. In Vercel, set `divyansh-rai.vercel.app` to redirect (308) to the new domain, so existing links and rankings carry over.
-4. Add the new domain in Search Console (DNS verification works there) and in Firebase authorized domains, then resubmit the sitemap.
+2. Change `SITE_URL` in `shared/seo.ts`, the `og:image` URL in `index.html` and the address on `public/og-image.png`, then deploy.
+3. Redirect (308) the old domain to the new one in Vercel, so links and rankings carry over.
+4. Add the new domain in Search Console and Firebase authorized domains, then resubmit the sitemap.
 
 ## Ongoing checklist (agent, monthly or after a content change)
 

@@ -2,9 +2,8 @@
 // prerender script, so both always produce the same titles, descriptions and URLs.
 
 // The site's public address, used for canonical URLs, the sitemap and social cards.
-// divyanshrai.co isn't pointing at Vercel right now, so the Vercel production domain is
-// the canonical one. When a custom domain works, change this line and redeploy.
-export const SITE_URL = "https://divyansh-rai.vercel.app";
+// To move domains: change this line and index.html's og:image, then redeploy.
+export const SITE_URL = "https://divyanshrai.in";
 export const SITE_NAME = "Divyansh Rai";
 export const DEFAULT_IMAGE = "/og-image.png";
 export const DEFAULT_DESCRIPTION =
