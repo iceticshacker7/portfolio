@@ -5,6 +5,7 @@ import ContactMeModal from "./ContactMeModal";
 import { useProfile } from "@/lib/profile";
 import { ThemeToggle } from "@/lib/theme";
 import { navItems } from "@/lib/nav";
+import Logo from "./Logo";
 
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -26,7 +27,7 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label={`${profile.name}, home`}>
-            <img src={profile.avatar} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-blue-500/30" />
+            <Logo className="h-9 w-9" />
             <span className="text-lg font-bold tracking-tight text-foreground">
               {profile.name || "Portfolio"}
             </span>

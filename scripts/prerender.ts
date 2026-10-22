@@ -26,7 +26,7 @@ interface Data {
   learnings: DirectoryItem[];
   skills: SkillCategory[];
   updated: Record<string, Date | undefined>;
-  /** The uploaded profile photo, when it lives in GridFS (used to build the favicons). */
+  /** The uploaded profile photo, when it lives in GridFS (used for profile.jpg). */
   photo?: Buffer;
 }
 
@@ -222,15 +222,15 @@ writeFileSync(
 );
 copyFileSync(join(DIST, "app.html"), join(DIST, "404.html"));
 
-// Favicons follow the uploaded profile photo; without one, the committed files in public/ stay.
+// profile.jpg follows the uploaded profile photo; without one, the committed file in public/ stays.
 let iconNote = "";
 if (data.photo) {
   try {
-    const { writeFavicons } = await import("./favicons.js");
-    await writeFavicons(data.photo, DIST);
-    iconNote = " + favicons";
+    const { writeProfilePhoto } = await import("./favicons.js");
+    await writeProfilePhoto(data.photo, DIST);
+    iconNote = " + profile.jpg";
   } catch (e) {
-    console.warn(`prerender: could not build favicons (${(e as Error).message}); keeping the defaults`);
+    console.warn(`prerender: could not build profile.jpg (${(e as Error).message}); keeping the default`);
   }
 }
 console.log(`prerender: wrote ${pages.length} pages + sitemap.xml + robots.txt${iconNote}`);

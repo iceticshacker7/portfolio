@@ -18,7 +18,7 @@ Use this playbook when something about Divyansh changes: a new job or title, a n
    | New skill or tool | the matching `skills` category (AI/ML groups stay first); add it to the `subtags` of the projects that use it so the skill chip links to proof; `profile.keySkills` only if it's top-10 for the target role |
    | New achievement | replace the weakest of the 4 `achievements`; keep each one linked to proof |
    | New resume | upload in Admin → Profile → Resume and click Save (sets `profile.resumeUrl`; the Resume buttons in the nav and hero appear automatically); then re-check every fact in `profile-facts.md` against it |
-   | New photo | upload in Admin → Profile → Avatar and Save. The tab icon updates at once; favicon files and `profile.jpg` regenerate on the next deploy; regenerate `public/og-image.png` by hand |
+   | New photo | upload in Admin → Profile → Avatar and Save. It shows in the hero and contact dialog at once; `profile.jpg` regenerates on the next deploy; regenerate `public/og-image.png` by hand. The favicon is the logo, not the photo |
    | New target role | follow `tailor-for-role.md` |
 
 3. **Write the copy** to `content-style.md`. Keep lengths within the table there.

@@ -1,30 +1,13 @@
-// Builds the site icons from the profile photo uploaded in the admin panel, so the
-// favicon follows the photo. Called by scripts/prerender.ts at build time; sharp is a
-// devDependency and is only used here, never in the API function.
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+// Site icons and the profile image. sharp is a devDependency used only by scripts,
+// never by the API function.
+//
+//   npm run icons   rebuilds public/ favicons from public/logo.svg (run after editing the logo)
+//   build           scripts/prerender.ts calls writeProfilePhoto() to refresh dist/profile.jpg
+//                   from the photo uploaded in the admin panel
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-
-/** Square crop centred a little above the middle, where a headshot's face usually is. */
-async function faceCrop(input: Buffer, zoom = 0.62) {
-  const img = sharp(input).rotate();
-  const { width = 0, height = 0 } = await img.metadata();
-  const side = Math.round(Math.min(width, height) * zoom);
-  const left = Math.max(0, Math.min(width - side, Math.round(width / 2 - side / 2)));
-  const top = Math.max(0, Math.min(height - side, Math.round(height * 0.4 - side / 2)));
-  return img.extract({ left, top, width: side, height: side }).toBuffer();
-}
-
-const circleMask = (size: number) =>
-  Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`);
-
-async function round(face: Buffer, size: number) {
-  return sharp(face)
-    .resize(size, size)
-    .composite([{ input: circleMask(size), blend: "dest-in" }])
-    .png()
-    .toBuffer();
-}
 
 /** An .ico holding PNG images (supported by every current browser). */
 function ico(images: { size: number; png: Buffer }[]) {
@@ -46,16 +29,26 @@ function ico(images: { size: number; png: Buffer }[]) {
   return Buffer.concat([header, ...images.map((i) => i.png)]);
 }
 
-export async function writeFavicons(photo: Buffer, dist: string) {
-  const face = await faceCrop(photo);
-  const sizes = [16, 32, 48, 192, 512];
-  const pngs = Object.fromEntries(await Promise.all(sizes.map(async (s) => [s, await round(face, s)] as const)));
-  for (const s of [16, 32, 48]) writeFileSync(join(dist, `favicon-${s}.png`), pngs[s]);
-  writeFileSync(join(dist, "icon-192.png"), pngs[192]);
-  writeFileSync(join(dist, "icon-512.png"), pngs[512]);
-  writeFileSync(join(dist, "favicon.ico"), ico([16, 32, 48].map((s) => ({ size: s, png: pngs[s] }))));
-  // iOS masks the corners itself and shows transparency as black, so this one stays square.
-  writeFileSync(join(dist, "apple-touch-icon.png"), await sharp(face).resize(180, 180).flatten({ background: "#ffffff" }).png().toBuffer());
-  // Used by JSON-LD (Person.image) and link previews.
+export async function writeIcons(logoSvg: Buffer, dir: string) {
+  const render = (size: number, svg = logoSvg) => sharp(svg, { density: 1200 }).resize(size, size).png().toBuffer();
+  const sizes = [16, 32, 48, 192, 512] as const;
+  const pngs = Object.fromEntries(await Promise.all(sizes.map(async (s) => [s, await render(s)] as const)));
+  for (const s of [16, 32, 48]) writeFileSync(join(dir, `favicon-${s}.png`), pngs[s]);
+  writeFileSync(join(dir, "icon-192.png"), pngs[192]);
+  writeFileSync(join(dir, "icon-512.png"), pngs[512]);
+  writeFileSync(join(dir, "favicon.ico"), ico([16, 32, 48].map((s) => ({ size: s, png: pngs[s] }))));
+  // iOS rounds the corners itself, so the home-screen icon is the full square tile.
+  const square = Buffer.from(logoSvg.toString().replace(/rx="14"/, 'rx="0"'));
+  writeFileSync(join(dir, "apple-touch-icon.png"), await render(180, square));
+}
+
+/** dist/profile.jpg (Person.image in the JSON-LD) from the uploaded profile photo. */
+export async function writeProfilePhoto(photo: Buffer, dist: string) {
   writeFileSync(join(dist, "profile.jpg"), await sharp(photo).rotate().resize(600, 600, { fit: "cover", position: "north" }).jpeg({ quality: 85 }).toBuffer());
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const pub = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
+  await writeIcons(readFileSync(join(pub, "logo.svg")), pub);
+  console.log("icons: wrote favicons, app icons and apple-touch-icon from public/logo.svg");
 }
