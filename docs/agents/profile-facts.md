@@ -12,17 +12,18 @@ Last reviewed: 2026-10-21. **Resume not yet added.** When it is (Admin → Profi
 | Site: https://divyanshrai.in | Vercel |
 | GitHub: https://github.com/iceticshacker7 · LinkedIn: https://www.linkedin.com/in/divyanshrai7 · Kaggle: https://kaggle.com/divyanshrai7 | profile.socials |
 | LeetCode: https://leetcode.com/divyanshrai7 · Codeforces: https://codeforces.com/profile/dedicatedaf | learning page "Algorithmic Proficiency" |
-| Current headline: "AI/ML Graduate \| Systems Engineer @TCS" | owner, Oct 2026 |
+| Current headline: "AI Engineer @TCS \| AI/ML Research & Development" | owner, 2026-10-22 |
 
 ## Work
 
 | Fact | Source |
 |---|---|
-| Systems Engineer (Trainee title on the site), Tata Consultancy Services, India, Aug 2024 – present. Training: Java, SQL, UNIX, UI design. | experience |
+| Artificial Intelligence Engineer, Tata Consultancy Services, India, Jan 2025 – present, in AI/ML research & development (the owner also described the role as "AI/ML Research Engineer, R&D"). | owner (admin edit + message, 2026-10-22); confirm exact title against the resume |
+| Systems Engineer (Trainee), Tata Consultancy Services, Aug 2024 – Dec 2024. Training: Java, SQL, UNIX, UI design. | experience (end date inferred from the Jan 2025 start of the AI role) |
 | TCS full-time offer, 18 Jul 2024 | experience |
 | Prodesk IT full-time offer (Frontend Developer), 20 Jul 2024 | experience |
 | Selected for an NLP research internship at IIT Bombay (Jul 2024) | experience |
-| ⚠️ Open question: is "Systems Engineer Trainee" still the current title? | ask owner |
+| ⚠️ Open question: exact official title (AI Engineer vs AI/ML Research Engineer) and the trainee end date; check the resume when uploaded. | ask owner |
 
 ## Education
 

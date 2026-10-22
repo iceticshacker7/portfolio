@@ -107,7 +107,13 @@ function SkillCard({ skill, index }: { skill: Skill; index: number }) {
       </div>
       <div className="flex flex-wrap gap-2">
         {skill.skills.map((s) => (
-          <Chip key={s}>{s}</Chip>
+          <Link
+            key={s}
+            to={`/resume?skill=${encodeURIComponent(s)}`}
+            className="rounded-full border border-border bg-muted/60 px-3 py-1 text-sm text-foreground/85 hover:border-blue-500/50 hover:text-foreground"
+          >
+            {s}
+          </Link>
         ))}
       </div>
     </motion.div>

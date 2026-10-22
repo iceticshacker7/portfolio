@@ -10,7 +10,7 @@ Use this playbook for projects, certificates, learning pages and contributions.
    - `title`: Title Case.
    - `slug`: lowercase-hyphenated; generated from the title if omitted. **Never change a published slug.**
    - `description`: 1–2 sentences, ≤ 220 chars. This doubles as the meta description.
-   - `tags`: from the existing set. `subtags`: the tools.
+   - `tags`: from the existing set. `subtags`: the tools and skills it demonstrates, spelled as on the Skills page (e.g. "OpenCV", "Scikit-learn", "OpenAI API (GPT)"). These are what link a skill chip to this project as proof.
    - `keyPoints`: 3–5 outcomes.
    - `sections`: the case study. Use `{ title, content: [{ type: "text", content: "<markdown>" }, { type: "image", content: "/media/..." }, …] }`. Write problem → approach → result → what I learned.
    - `featured`: see `tailor-for-role.md`. `order`: lower comes first.

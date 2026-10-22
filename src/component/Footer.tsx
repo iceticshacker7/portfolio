@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useProfile } from '@/lib/profile'
 import { socialIconMap } from '@/lib/icons'
 import { navItems } from '@/lib/nav'
+import Logo from './Logo'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -13,7 +14,7 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
           <div>
             <Link to="/" className="inline-flex items-center gap-3">
-              <img src={profile.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+              <Logo className="h-10 w-10" />
               <span className="text-xl font-bold tracking-tight text-foreground">
                 {profile.name}
               </span>
@@ -58,9 +59,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
           <p>&copy; {currentYear} {profile.name}. All rights reserved.</p>
-          <Link to="/login" className="text-muted-foreground/70 hover:text-foreground transition-colors">
-            Admin
-          </Link>
+          {/* No admin link on the public site: sign in at /login directly. */}
         </div>
       </div>
     </footer>

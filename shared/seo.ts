@@ -7,7 +7,7 @@ export const SITE_URL = "https://divyanshrai.in";
 export const SITE_NAME = "Divyansh Rai";
 export const DEFAULT_IMAGE = "/og-image.png";
 export const DEFAULT_DESCRIPTION =
-  "Divyansh Rai is an AI/ML graduate and Systems Engineer at TCS. Machine learning, computer vision and data projects, certifications, and learning notes.";
+  "Divyansh Rai is an AI Engineer at TCS working in AI/ML research and development. Machine learning, computer vision and LLM projects, certifications, and learning notes.";
 
 export interface PageMeta {
   title: string;
@@ -40,7 +40,7 @@ export function excerpt(text: string, max = 155): string {
 
 /** Static routes with their meta; dynamic routes (projects, learnings) are added from the database. */
 export const staticPages: PageMeta[] = [
-  { path: "/", title: `${SITE_NAME} | AI/ML Graduate & Systems Engineer`, description: DEFAULT_DESCRIPTION, type: "profile" },
+  { path: "/", title: `${SITE_NAME} | AI Engineer, AI/ML Research & Development`, description: DEFAULT_DESCRIPTION, type: "profile" },
   { path: "/projects", title: "Projects", description: "Machine learning, computer vision, data analysis and full-stack projects by Divyansh Rai, with write-ups, code and live demos." },
   { path: "/experience", title: "Experience", description: "Education, work at TCS, offers and competitions: Divyansh Rai's academic and professional journey." },
   { path: "/resume", title: "Skills", description: "Programming languages, ML frameworks, cloud platforms and tools Divyansh Rai works with." },
@@ -51,7 +51,7 @@ export const staticPages: PageMeta[] = [
 
 /** Facts used for schema.org Person markup (helps Google connect name searches to this site). */
 export const PERSON = {
-  jobTitle: "Systems Engineer",
+  jobTitle: "AI Engineer",
   worksFor: "Tata Consultancy Services",
   alumniOf: "Gyan Ganga Institute of Technology & Sciences",
   image: "/profile.jpg",

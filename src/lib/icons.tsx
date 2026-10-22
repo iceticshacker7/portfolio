@@ -1,6 +1,7 @@
 import type { IconType } from "react-icons";
 import { FaEnvelope, FaGithub, FaGlobe, FaInstagram, FaKaggle, FaLinkedin, FaMedium, FaXTwitter, FaYoutube } from "react-icons/fa6";
 import {
+  BarChart3,
   Book,
   BookPlus,
   Bot,
@@ -8,6 +9,7 @@ import {
   Cloud,
   Code,
   Database,
+  Eye,
   Globe,
   Library,
   School,
@@ -30,6 +32,8 @@ export const skillIconMap: Record<SkillIcon, LucideIcon> = {
   brain: Brain,
   cloud: Cloud,
   wrench: Wrench,
+  eye: Eye,
+  chart: BarChart3,
 };
 
 export const socialIconMap: Record<SocialPlatform, { Icon: IconType; label: string }> = {

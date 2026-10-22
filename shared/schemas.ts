@@ -95,7 +95,7 @@ export const directorySchema = z.object({
     .optional(),
 });
 
-export const skillIcons = ["code", "globe", "database", "library", "book", "bookplus", "school", "server", "bot", "brain", "cloud", "wrench"] as const;
+export const skillIcons = ["code", "globe", "database", "library", "book", "bookplus", "school", "server", "bot", "brain", "cloud", "wrench", "eye", "chart"] as const;
 
 export const skillCategorySchema = z.object({
   name: text(100).min(1),
