@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { FileText, Menu, X } from "lucide-react";
 import ContactMeModal from "./ContactMeModal";
 import { useProfile } from "@/lib/profile";
 import { ThemeToggle } from "@/lib/theme";
@@ -42,6 +42,17 @@ export default function Header() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {profile.resumeUrl && (
+              <a
+                href={profile.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                <FileText className="h-4 w-4" aria-hidden="true" />
+                Resume
+              </a>
+            )}
             <button
               onClick={() => setIsContactModalOpen(true)}
               className="hidden sm:inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -70,6 +81,17 @@ export default function Header() {
                 {item.name}
               </NavLink>
             ))}
+            {profile.resumeUrl && (
+              <a
+                href={profile.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                <FileText className="h-4 w-4" aria-hidden="true" />
+                Resume
+              </a>
+            )}
             <button
               type="button"
               className="mt-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500"
@@ -84,7 +106,7 @@ export default function Header() {
         </div>
       )}
 
-      {/* Rendered once, outside the desktop-only block, so the mobile button can open it too. */}
+      {/* Rendered once so both the desktop and mobile buttons can open it; it portals to <body>. */}
       <ContactMeModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
     </header>
   );

@@ -26,6 +26,19 @@ interface Data {
   learnings: DirectoryItem[];
   skills: SkillCategory[];
   updated: Record<string, Date | undefined>;
+  /** The uploaded profile photo, when it lives in GridFS (used to build the favicons). */
+  photo?: Buffer;
+}
+
+/** Reads an avatar uploaded through the admin panel (/api/files/<id>/...) from GridFS. */
+async function readUploadedPhoto(avatar: string | undefined): Promise<Buffer | undefined> {
+  const id = avatar?.match(/^\/api\/files\/([0-9a-f]{24})/)?.[1];
+  if (!id) return undefined;
+  const { getBucket } = await import("../server/db.js");
+  const { ObjectId } = await import("mongodb");
+  const chunks: Buffer[] = [];
+  for await (const chunk of (await getBucket()).openDownloadStream(new ObjectId(id))) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks);
 }
 
 async function loadData(): Promise<Data> {
@@ -41,7 +54,8 @@ async function loadData(): Promise<Data> {
       (await db.collection<{ _id: string; updatedAt?: Date }>(name).find().sort({ order: 1, createdAt: 1 }).toArray()).map(
         ({ _id, ...rest }) => ({ id: _id, ...rest }) as unknown as T & { updatedAt?: Date },
       );
-    const profileDoc = await db.collection<{ _id: string }>("profile").findOne({ _id: "main" });
+    const profileDoc = await db.collection<{ _id: string; avatar?: string }>("profile").findOne({ _id: "main" });
+    const photo = await readUploadedPhoto(profileDoc?.avatar).catch(() => undefined);
     const [projects, certificates, directories, skills] = await Promise.all([
       all<Project>("projects"),
       all<Certificate>("certificates"),
@@ -53,7 +67,7 @@ async function loadData(): Promise<Data> {
     for (const p of projects) updated[projectPath(p)] = p.updatedAt;
     const learnings = directories.filter((d) => d.type === "file" && d.learningItem);
     for (const d of learnings) updated[learningPath(d)] = (d as { updatedAt?: Date }).updatedAt;
-    return { profile: { ...seedProfile, ...(profileDoc as unknown as Profile) }, projects, certificates, learnings, skills, updated };
+    return { profile: { ...seedProfile, ...(profileDoc as unknown as Profile) }, projects, certificates, learnings, skills, updated, photo };
   } catch (e) {
     console.warn(`prerender: could not read MongoDB (${(e as Error).message}); writing static routes only`);
     return empty;
@@ -207,4 +221,16 @@ writeFileSync(
   `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /login\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`,
 );
 copyFileSync(join(DIST, "app.html"), join(DIST, "404.html"));
-console.log(`prerender: wrote ${pages.length} pages + sitemap.xml + robots.txt`);
+
+// Favicons follow the uploaded profile photo; without one, the committed files in public/ stay.
+let iconNote = "";
+if (data.photo) {
+  try {
+    const { writeFavicons } = await import("./favicons.js");
+    await writeFavicons(data.photo, DIST);
+    iconNote = " + favicons";
+  } catch (e) {
+    console.warn(`prerender: could not build favicons (${(e as Error).message}); keeping the defaults`);
+  }
+}
+console.log(`prerender: wrote ${pages.length} pages + sitemap.xml + robots.txt${iconNote}`);

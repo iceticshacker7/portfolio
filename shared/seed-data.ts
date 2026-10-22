@@ -8,7 +8,7 @@ export const seedProfile: Profile = {
   name: "Divyansh Rai",
   initials: "DR",
   avatar: "",
-  headline: "AI/ML Graduate | Systems Engineer @TCS",
+  headline: "AI Engineer @TCS | AI/ML Research & Development",
   focusAreas: [
     "Machine Learning & Deep Learning",
     "Computer Vision",
@@ -17,7 +17,7 @@ export const seedProfile: Profile = {
     "Full-stack Development",
   ],
   keySkills: "Python, TensorFlow, PyTorch, Scikit-learn, LangChain, OpenCV, Pandas, SQL, React, Node.js",
-  footerTagline: "Systems Engineer @TCS | AI/ML Graduate",
+  footerTagline: "AI Engineer, AI/ML Research & Development @ TCS",
   resumeUrl: "",
   socials: [
     { platform: "github", url: "https://github.com/iceticshacker7" },
@@ -27,7 +27,7 @@ export const seedProfile: Profile = {
   about: {
     title: "Building practical machine learning products",
     paragraphs: [
-      "I'm a Systems Engineer at Tata Consultancy Services and a B.Tech graduate in Artificial Intelligence & Machine Learning from Gyan Ganga Institute of Technology & Sciences (2020–2024, CGPA 8.7).",
+      "I'm an AI Engineer at Tata Consultancy Services, working in AI/ML research and development, and a B.Tech graduate in Artificial Intelligence & Machine Learning from Gyan Ganga Institute of Technology & Sciences (2020–2024, CGPA 8.7).",
       "I build machine learning and data products end to end: a real-time driver drowsiness detector using OpenCV and a CNN, Code Learner (an LLM assistant that answers questions about code repositories), and interactive analytics dashboards in Streamlit, Plotly and Tableau.",
       "In college I led the team that built our coding club's platform, solved 830+ problems on LeetCode and was a finalist at Microsoft Engage 2022. I'm looking for roles in machine learning engineering and applied AI.",
     ],
@@ -44,40 +44,23 @@ export const seedProfile: Profile = {
 };
 
 export const seedSkills: Seed<SkillCategory>[] = [
-  { name: "Programming Languages", icon: "code", skills: ["C", "C++", "Python", "JavaScript"], featured: false, order: 1 },
-  { name: "Web-Technologies", icon: "globe", skills: ["HTML5", "CSS", "Tailwind CSS", "React.js", "Express.js", "Node.js"], featured: false, order: 2 },
-  { name: "Databases", icon: "database", skills: ["MongoDB", "SQL/MySQL"], featured: false, order: 3 },
-  {
-    name: "AI & Data Science",
-    icon: "library",
-    skills: ["Langchain", "Tensorflow", "Scikit-Learn", "OpenCV", "NLP", "Pytorch", "numpy", "pandas", "matplotlib", "seaborn", "Tableau"],
-    featured: true,
-    order: 4,
-  },
-  {
-    name: "Subjects",
-    icon: "book",
-    skills: ["Machine Learning", "Deep Learning", "Computer Vision", "Mathematics", "Statistics & Probability", "Natural Language Processing (NLP)"],
-    featured: true,
-    order: 5,
-  },
-  {
-    name: "Academic",
-    icon: "school",
-    skills: ["Data Structures and Algorithms (DSA)", "Test Driven Development (TDD)", "Object-Oriented Programming (OOP)", "Database Management Systems"],
-    featured: false,
-    order: 6,
-  },
-  { name: "Services", icon: "server", skills: ["AWS (RDS, EC2)", "Oracle Cloud", "Google Qwik-Labs", "Vercel", "MongoDB Atlas"], featured: false, order: 7 },
-  { name: "Gen-AI Tools", icon: "bot", skills: ["GPT", "Claude", "Hugging Face", "v0.dev", "Copilot", "Gemini"], featured: true, order: 8 },
-  { name: "Miscellaneous", icon: "bookplus", skills: ["Visual Studio", "GitHub", "PuTTY", "VM-Oracle", "Linux"], featured: false, order: 9 },
+  { name: "Machine Learning & Deep Learning", icon: "brain", skills: ["Machine Learning", "Deep Learning", "TensorFlow", "Keras", "PyTorch", "Scikit-learn", "Feature Engineering", "Statistics & Probability", "Mathematics"], featured: true, order: 1 },
+  { name: "Generative AI & NLP", icon: "bot", skills: ["Natural Language Processing (NLP)", "LangChain", "OpenAI API (GPT)", "Hugging Face", "Claude", "Gemini", "GitHub Copilot", "v0.dev"], featured: true, order: 2 },
+  { name: "Computer Vision", icon: "eye", skills: ["Computer Vision", "OpenCV", "CNNs", "Image Processing"], featured: true, order: 3 },
+  { name: "Data Analysis & Visualization", icon: "chart", skills: ["Pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn", "Plotly", "Streamlit", "Tableau"], featured: false, order: 4 },
+  { name: "Programming Languages", icon: "code", skills: ["Python", "C++", "C", "JavaScript", "SQL"], featured: false, order: 5 },
+  { name: "Web Development", icon: "globe", skills: ["React.js", "Node.js", "Express.js", "Tailwind CSS", "HTML5", "CSS"], featured: false, order: 6 },
+  { name: "Cloud & Databases", icon: "cloud", skills: ["AWS (EC2, RDS)", "Google Cloud", "Oracle Cloud", "MongoDB Atlas", "MongoDB", "MySQL", "Vercel"], featured: false, order: 7 },
+  { name: "CS Fundamentals", icon: "school", skills: ["Data Structures & Algorithms", "Object-Oriented Programming", "Database Management Systems", "Test-Driven Development"], featured: false, order: 8 },
+  { name: "Developer Tools", icon: "wrench", skills: ["Git & GitHub", "Linux", "Docker", "Jupyter", "Visual Studio", "VirtualBox", "PuTTY"], featured: false, order: 9 },
 ];
 
 export const seedExperience: Seed<Experience>[] = [
   { section: "Academic", title: "B.Tech - Artificial Intelligence & Machine Learning", description: "Grade : 8.7", institution: "Gyan Ganga Institute of Technology & Sciences, India", dateRange: "2020 - 2024", order: 1 },
   { section: "Academic", title: "Class XII", description: "Grade : 8.3", institution: "Maths, Physics, Chemistry | CBSE", dateRange: "2020", order: 2 },
   { section: "Academic", title: "Class X", description: "Percentage : 84.4%", institution: "Central Board of Secondary Education, India", dateRange: "2018", order: 3 },
-  { section: "Professional", title: "Systems Engineer Trainee", description: "Trainings : Java | SQL | UNIX | UI Design", institution: "Tata Consultancy Services, India", dateRange: "August 2024 - Present", order: 1 },
+  { section: "Professional", title: "Artificial Intelligence Engineer", description: "AI/ML research and development", institution: "Tata Consultancy Services, India", dateRange: "Jan 2025 - Present", order: 1 },
+  { section: "Professional", title: "Systems Engineer (Trainee)", description: "Trainings: Java, SQL, UNIX, UI design", institution: "Tata Consultancy Services, India", dateRange: "August 2024 - December 2024", order: 2 },
   { section: "Offers", title: "Systems Engineer", description: "Full-time offer · joined August 2024", institution: "Tata Consultancy Services, India", dateRange: "18 July 2024", order: 1 },
   { section: "Offers", title: "Frontend Developer", description: "Full-time offer", institution: "Prodesk IT, India", dateRange: "20th July 2024", order: 2 },
   { section: "Offers", title: "NLP Research Internship", description: "Selected for a research internship in natural language processing", institution: "IIT Bombay, India", dateRange: "20th July 2024", order: 3 },

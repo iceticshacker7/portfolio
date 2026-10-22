@@ -3,6 +3,7 @@ import type { Profile } from "@shared/schemas";
 import { seedProfile } from "@shared/seed-data";
 import myImage from "@/assets/myimage.jpeg";
 import { useApi } from "./api";
+import { useAvatarFavicon } from "./favicon";
 
 interface ProfileState {
   profile: Profile;
@@ -16,6 +17,8 @@ const ProfileContext = createContext<ProfileState>({ profile: seedProfile, loadi
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { data, loading, reload } = useApi<Profile | null>("/profile", null);
   const profile = data ?? seedProfile;
+  // Only an uploaded photo (not the bundled fallback) should replace the favicon.
+  useAvatarFavicon(data?.avatar ?? "");
   return (
     <ProfileContext.Provider value={{ profile: { ...profile, avatar: profile.avatar || myImage }, loading, reload }}>
       {children}

@@ -58,9 +58,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
           <p>&copy; {currentYear} {profile.name}. All rights reserved.</p>
-          <Link to="/login" className="text-muted-foreground/70 hover:text-foreground transition-colors">
-            Admin
-          </Link>
+          {/* No admin link on the public site: sign in at /login directly. */}
         </div>
       </div>
     </footer>

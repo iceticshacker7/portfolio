@@ -2,6 +2,13 @@
 
 Newest first. Record every content change with the old value, so it can be undone. Format: date · who/what · records · change.
 
+## 2026-10-22 · Claude Code session · AI Engineer title, skills regrouped, skill proof links
+
+- **profile**: `headline` was "AI/ML Graduate | Systems Engineer @TCS"; `footerTagline` was "Systems Engineer @TCS | AI/ML Graduate"; `about.paragraphs[0]` began "I'm a Systems Engineer at Tata Consultancy Services and a B.Tech graduate…". SEO default description, home title and `PERSON.jobTitle` ("Systems Engineer") updated in `shared/seo.ts` and `index.html`.
+- **experience**: `seed-mvhrvz4a-3` (owner had already set title "Artificial Intelligence Engineer", Jan 2025 – Present) description was "Trainings : Java | SQL | UNIX | UI Design". Added `tcs-systems-engineer-2024` "Systems Engineer (Trainee)", Aug–Dec 2024.
+- **skills**: the 9 categories (`seed-mvhrvz4a-0`…`-8`) were regrouped AI-first. Old groups: Programming Languages; Web-Technologies; Databases; AI & Data Science; Subjects; Academic; Services; Gen-AI Tools; Miscellaneous (contents in git history of `shared/seed-data.ts`). Renamed "GPT" → "OpenAI API (GPT)", "Copilot" → "GitHub Copilot", "Google Qwik-Labs" → "Google Cloud", "VM-Oracle" → "VirtualBox"; added tools evidenced in write-ups: Keras, Feature Engineering, CNNs, Image Processing, SciPy, Plotly, Streamlit, Docker, Jupyter.
+- **projects.subtags** (used as explicit skill links): Olympics was ["Python"]; Club was ["JavaScript","React","Node.js","Express","GitHub"]; Drowsiness was ["OpenCV"]; Code Learner was ["NLP","Python"].
+
 ## 2026-10-22 · Claude Code session · new domain divyanshrai.in
 
 - Site address changed from `https://divyansh-rai.vercel.app` (used 2026-10-21 after divyanshrai.co lapsed) to `https://divyanshrai.in`: `SITE_URL`, `index.html` og:image, the address on `public/og-image.png`, and all docs.
