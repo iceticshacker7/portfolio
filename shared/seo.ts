@@ -1,7 +1,9 @@
 // SEO settings shared by the browser (per-page <head> updates) and the build-time
 // prerender script, so both always produce the same titles, descriptions and URLs.
 
-export const SITE_URL = "https://divyanshrai.co";
+// The site's public address, used for canonical URLs, the sitemap and social cards.
+// To move domains: change this line and index.html's og:image, then redeploy.
+export const SITE_URL = "https://divyanshrai.in";
 export const SITE_NAME = "Divyansh Rai";
 export const DEFAULT_IMAGE = "/og-image.png";
 export const DEFAULT_DESCRIPTION =

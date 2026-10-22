@@ -1,6 +1,6 @@
 ---
 name: portfolio-update
-description: Update divyanshrai.co content. Use for changes to Divyansh's profile, headline, about text, experience, skills, achievements or resume; for adding or editing projects, certificates or learning pages; for tailoring the site to a target role; and for SEO or marketing upkeep.
+description: Update divyanshrai.in content. Use for changes to Divyansh's profile, headline, about text, experience, skills, achievements or resume; for adding or editing projects, certificates or learning pages; for tailoring the site to a target role; and for SEO or marketing upkeep.
 ---
 
 # Portfolio update

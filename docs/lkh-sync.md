@@ -7,7 +7,7 @@ Goal: when something changes in LKH (the personal career dashboard and agent mem
 ```
 LKH (local)                       portfolio (Vercel + Atlas)
 ───────────                       ──────────────────────────
-notes / memory ──► sync agent ──► POST /api/sync  ──► MongoDB ──► divyanshrai.co
+notes / memory ──► sync agent ──► POST /api/sync  ──► MongoDB ──► divyanshrai.in
                    (maps + tailors)  Bearer SYNC_TOKEN
                         ▲
                         └──────── GET /api/sync/export (what's live now)
@@ -44,7 +44,7 @@ Enable it by setting `SYNC_TOKEN` (32+ random characters) in Vercel and in LKH's
 
 `GET /api/sync/export` returns everything that's live, including `lastSync`, so the agent can diff before pushing.
 
-CLI wrapper: `SYNC_URL=https://divyanshrai.co SYNC_TOKEN=… npm run sync:push -- payload.json [--dry]` and `npm run sync:push -- --export`.
+CLI wrapper: `SYNC_URL=https://divyanshrai.in SYNC_TOKEN=… npm run sync:push -- payload.json [--dry]` and `npm run sync:push -- --export`.
 
 ## Role tailoring (the agentic part)
 

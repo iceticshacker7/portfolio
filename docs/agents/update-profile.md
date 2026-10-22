@@ -23,7 +23,7 @@ Use this playbook when something about Divyansh changes: a new job or title, a n
 3. **Write the copy** to `content-style.md`. Keep lengths within the table there.
 4. **Dry run.** With the sync API, send `dryRun: true`; `profile` replaces the whole document, so send the full exported profile with your edits. With Atlas, prepare `$set` on only the changed fields. Show the owner a before/after.
 5. **Apply** once the owner approves.
-6. **Verify.** Load https://divyanshrai.co, then the home hero, About and `/experience`. Check light and dark mode, and mobile if layout could change.
+6. **Verify.** Load https://divyanshrai.in, then the home hero, About and `/experience`. Check light and dark mode, and mobile if layout could change.
 7. **Log it** in `changelog.md`, with the old values.
 8. If the headline, description or job title changed, **redeploy** so the prerendered SEO pages and the OG card pick it up. If the change is big (new job), regenerate `public/og-image.png` (1200×630; name, headline and photo).
 

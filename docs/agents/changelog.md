@@ -2,6 +2,11 @@
 
 Newest first. Record every content change with the old value, so it can be undone. Format: date · who/what · records · change.
 
+## 2026-10-22 · Claude Code session · new domain divyanshrai.in
+
+- Site address changed from `https://divyansh-rai.vercel.app` (used 2026-10-21 after divyanshrai.co lapsed) to `https://divyanshrai.in`: `SITE_URL`, `index.html` og:image, the address on `public/og-image.png`, and all docs.
+- Vercel project domains added: `divyanshrai.in`, `www.divyanshrai.in` (308 → apex).
+
 ## 2026-10-21 · Claude Code session · professional copy and SEO pass
 
 Applied to Atlas `portfolio` and mirrored in `shared/seed-data.ts`.
