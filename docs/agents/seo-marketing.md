@@ -7,13 +7,14 @@
 - **Clean URLs:** `/projects/<slug>` and `/learning/<slug>`. Old id URLs still resolve.
 - **Social card:** `public/og-image.png` (1200×630). Project pages use their cover image.
 - **Client-side updates:** `useSeo` (`src/lib/seo.ts`) keeps tags right during in-app navigation. Settings live in `shared/seo.ts`.
+- **Structured data:** the home page has `ProfilePage` + `Person` + `WebSite` JSON-LD; `Person.sameAs` lists every profile (from `profile.socials` plus `PERSON.sameAs` in `shared/seo.ts`). Add new public profiles there; it is how Google ties them to this site for a name search.
 - **Vercel Web Analytics:** wired in (`@vercel/analytics`). It also has to be enabled in the Vercel dashboard: Project → Analytics → Enable.
 
 ## Domain
 
 - **https://divyanshrai.in** is the site's address (`SITE_URL` in `shared/seo.ts`). Registered at **Spaceship** (Oct 2026); keep auto-renew on.
 - DNS at Spaceship: `A  @  216.198.79.1` and `CNAME  www  c92395500bcbb74f.vercel-dns-017.com` (values from Vercel → Project → Domains; re-check there if Vercel changes them).
-- In Vercel, `www.divyanshrai.in` redirects (308) to the apex. `divyansh-rai.vercel.app` should also redirect (308) to `divyanshrai.in` once the domain resolves, so old links keep their value.
+- `www.divyanshrai.in` redirects (308) to the apex (Vercel domain setting). `divyansh-rai.vercel.app` and `portfolio-henna-tau-99.vercel.app` redirect (308) via `vercel.json`, so Google merges the year of history on the old addresses into the new one.
 - `divyanshrai.co` (lapsed, not owned) is still listed on the Vercel project and can be removed.
 
 ## One-time setup (owner)

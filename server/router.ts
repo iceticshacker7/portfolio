@@ -38,6 +38,17 @@ function route(method: string, path: string, handler: Handler) {
 
 type StoredDoc = Document & { _id: string };
 
+/**
+ * Starts a production rebuild after content changes so the prerendered pages (search
+ * metadata, sitemap, the profile embedded in each page) catch up. Optional: set
+ * DEPLOY_HOOK_URL to a Vercel deploy hook (Project → Settings → Git → Deploy Hooks).
+ */
+async function triggerRebuild() {
+  const hook = process.env.DEPLOY_HOOK_URL;
+  if (!hook) return;
+  await fetch(hook, { method: "POST", signal: AbortSignal.timeout(3000) }).catch(() => {});
+}
+
 function toApi(doc: StoredDoc) {
   const { _id, createdAt: _c, ...rest } = doc;
   return { id: _id, ...rest };
@@ -136,6 +147,7 @@ route("PUT", "/api/profile", async (req, res) => {
   await db
     .collection<StoredDoc>("profile")
     .updateOne({ _id: "main" }, { $set: { ...data, updatedAt: new Date() } }, { upsert: true });
+  await triggerRebuild();
   sendJson(res, 200, { id: "main", ...data });
 });
 
@@ -313,6 +325,7 @@ route("POST", "/api/sync", async (req, res) => {
     await db.collection<StoredDoc>("profile").updateOne({ _id: "main" }, { $set: { ...profile, updatedAt: now } }, { upsert: true });
   }
   await db.collection<StoredDoc>("sync_log").insertOne({ _id: newId(), at: now, source: body.source, profile: Boolean(profile), summary });
+  await triggerRebuild();
   sendJson(res, 200, { ok: true, profile: Boolean(profile), summary });
 });
 
@@ -345,6 +358,7 @@ route("POST", "/api/:collection", async (req, res, params) => {
   const db = await getDb();
   const doc = { _id: id, ...data, createdAt: new Date(), updatedAt: new Date() };
   await db.collection<StoredDoc>(name).insertOne(doc);
+  await triggerRebuild();
   sendJson(res, 201, toApi(doc));
 });
 
@@ -357,6 +371,7 @@ route("PUT", "/api/:collection/:id", async (req, res, params) => {
     .collection<StoredDoc>(name)
     .findOneAndUpdate({ _id: params.id }, { $set: { ...data, updatedAt: new Date() } }, { returnDocument: "after" });
   if (!result) throw new HttpError(404, "Not found");
+  await triggerRebuild();
   sendJson(res, 200, toApi(result));
 });
 
@@ -377,6 +392,7 @@ route("DELETE", "/api/:collection/:id", async (req, res, params) => {
     }
   }
   await db.collection<StoredDoc>(name).deleteMany({ _id: { $in: ids } });
+  await triggerRebuild();
   sendJson(res, 200, { ok: true, deleted: ids.length });
 });
 
