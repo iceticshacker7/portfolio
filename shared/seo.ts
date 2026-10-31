@@ -55,5 +55,7 @@ export const PERSON = {
   worksFor: "Tata Consultancy Services",
   alumniOf: "Gyan Ganga Institute of Technology & Sciences",
   image: "/profile.jpg",
+  /** Profiles not in profile.socials that also identify this person (JSON-LD sameAs). */
+  sameAs: ["https://leetcode.com/divyanshrai7", "https://codeforces.com/profile/dedicatedaf"],
   knowsAbout: ["Machine Learning", "Deep Learning", "Computer Vision", "Natural Language Processing", "Data Analysis", "Python", "TensorFlow", "PyTorch"],
 };

@@ -26,6 +26,8 @@ interface Data {
   learnings: DirectoryItem[];
   skills: SkillCategory[];
   updated: Record<string, Date | undefined>;
+  /** True when the data came from MongoDB rather than the seed fallback. */
+  fromDb: boolean;
   /** The uploaded profile photo, when it lives in GridFS (used for profile.jpg). */
   photo?: Buffer;
 }
@@ -42,7 +44,7 @@ async function readUploadedPhoto(avatar: string | undefined): Promise<Buffer | u
 }
 
 async function loadData(): Promise<Data> {
-  const empty: Data = { profile: seedProfile, projects: [], certificates: [], learnings: [], skills: [], updated: {} };
+  const empty: Data = { profile: seedProfile, projects: [], certificates: [], learnings: [], skills: [], updated: {}, fromDb: false };
   if (!process.env.MONGODB_URI) {
     console.warn("prerender: MONGODB_URI not set, writing static routes only");
     return empty;
@@ -67,7 +69,7 @@ async function loadData(): Promise<Data> {
     for (const p of projects) updated[projectPath(p)] = p.updatedAt;
     const learnings = directories.filter((d) => d.type === "file" && d.learningItem);
     for (const d of learnings) updated[learningPath(d)] = (d as { updatedAt?: Date }).updatedAt;
-    return { profile: { ...seedProfile, ...(profileDoc as unknown as Profile) }, projects, certificates, learnings, skills, updated, photo };
+    return { profile: { ...seedProfile, ...(profileDoc as unknown as Profile) }, projects, certificates, learnings, skills, updated, photo, fromDb: true };
   } catch (e) {
     console.warn(`prerender: could not read MongoDB (${(e as Error).message}); writing static routes only`);
     return empty;
@@ -86,7 +88,7 @@ function personLd(profile: Profile) {
     worksFor: { "@type": "Organization", name: PERSON.worksFor },
     alumniOf: { "@type": "CollegeOrUniversity", name: PERSON.alumniOf },
     knowsAbout: PERSON.knowsAbout,
-    sameAs: profile.socials.filter((s) => s.platform !== "email" && /^https?:/.test(s.url)).map((s) => s.url),
+    sameAs: [...new Set([...profile.socials.filter((s) => s.platform !== "email" && /^https?:/.test(s.url)).map((s) => s.url), ...PERSON.sameAs])],
   };
 }
 
@@ -140,12 +142,38 @@ function write(path: string, html: string) {
 
 const data = await loadData();
 const { profile } = data;
-const template = readFileSync(join(DIST, "index.html"), "utf8");
+let template = readFileSync(join(DIST, "index.html"), "utf8");
+// Embed the live profile in every page so the app's first paint already shows the current
+// photo and headline (src/lib/profile.tsx reads it); a JSON script block is not executed,
+// so the CSP is unaffected. Only when the data came from MongoDB, not the seed fallback.
+if (data.fromDb) {
+  const publicProfile = Object.fromEntries(Object.entries(profile).filter(([k]) => !["_id", "createdAt", "updatedAt"].includes(k)));
+  const json = JSON.stringify(publicProfile).replace(/</g, "\\u003c");
+  const preload = profile.avatar ? `<link rel="preload" as="image" href="${esc(profile.avatar)}" fetchpriority="high" />\n    ` : "";
+  template = template.replace("</head>", `  ${preload}<script type="application/json" id="initial-profile">${json}</script>\n  </head>`);
+}
 // Untouched SPA shell for any URL without a prerendered page (vercel.json falls back to it).
 writeFileSync(join(DIST, "app.html"), template);
 
 const person = personLd(profile);
-const site = { "@type": "WebSite", "@id": `${SITE_URL}/#website`, url: SITE_URL, name: SITE_NAME, publisher: { "@id": `${SITE_URL}/#person` } };
+const site = {
+  "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
+  url: SITE_URL,
+  name: SITE_NAME,
+  alternateName: [new URL(SITE_URL).hostname, `${SITE_NAME} Portfolio`],
+  publisher: { "@id": `${SITE_URL}/#person` },
+};
+// Google's ProfilePage markup: tells it the home page is about this person (helps name searches).
+const profilePage = {
+  "@type": "ProfilePage",
+  "@id": `${SITE_URL}/#profilepage`,
+  url: `${SITE_URL}/`,
+  name: fullTitle(staticPages[0].title),
+  mainEntity: { "@id": `${SITE_URL}/#person` },
+  isPartOf: { "@id": `${SITE_URL}/#website` },
+  dateModified: new Date().toISOString(),
+};
 const nav = `<nav>${staticPages.slice(1).map((p) => link(p.path, p.title)).join(" · ")}</nav>`;
 const pages: { meta: PageMeta; lastmod?: Date }[] = [];
 
@@ -167,7 +195,7 @@ for (const meta of staticPages) {
   } else {
     body = `<h1>${esc(meta.title)}</h1><p>${esc(meta.description)}</p>`;
   }
-  write(meta.path, render(template, meta, meta.path === "/" ? [person, site] : [person, ...crumbs], nav + body));
+  write(meta.path, render(template, meta, meta.path === "/" ? [profilePage, person, site] : [person, ...crumbs], nav + body));
   pages.push({ meta });
 }
 

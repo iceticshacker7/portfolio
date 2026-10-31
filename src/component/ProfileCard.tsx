@@ -355,7 +355,11 @@ export default function EnhancedPortfolio() {
             className="relative mx-auto w-56 sm:w-72 md:w-80 aspect-square"
           >
             <div className="relative h-full w-full rounded-full p-1 bg-border shadow-xl">
-              <img src={profile.avatar} alt={profile.name} className="h-full w-full rounded-full object-cover border-4 border-background" />
+              {profile.avatar ? (
+                <img src={profile.avatar} alt={profile.name} fetchPriority="high" className="h-full w-full rounded-full object-cover border-4 border-background" />
+              ) : (
+                <div className="h-full w-full rounded-full border-4 border-background bg-muted" aria-hidden="true" />
+              )}
             </div>
           </motion.div>
         </div>
